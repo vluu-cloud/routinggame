@@ -389,13 +389,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .lb-route-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px;}
 .lb-route-stops{font-size:13px;color:var(--text2);margin-bottom:2px;line-height:1.4;}
 .lb-route-stats{font-size:13px;color:var(--text3);font-family:var(--mono);}
-.lb-status{text-align:center;padding:2rem;font-size:15px;color:var(--text3);}
-.lb-status.loading::before{content:'⏳ ';}
-.lb-status.error{color:#fca5a5;}
-.lb-error-note{font-size:12px;margin-top:4px;color:var(--text3);}
-.lb-own{border-color:rgba(59,126,248,0.4)!important;background:rgba(59,126,248,0.04)!important;}
-.lb-refresh-btn{background:none;border:1px solid var(--border2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;padding:5px 14px;border-radius:7px;font-family:var(--font);transition:all .15s;}
-.lb-refresh-btn:hover{border-color:var(--accent);color:var(--accent);}
 
 /* ── MISC ── */
 .ctx-menu{
@@ -824,10 +817,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   <div class="lb-wrap">
     <div class="lb-header">
       <h1>🏆 Leaderboard</h1>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="lb-refresh-btn" onclick="showLeaderboard()" id="lb-refresh-btn">↻ Refresh</button>
-        <button class="btn-secondary" onclick="goBack()">← Back</button>
-      </div>
+      <button class="btn-secondary" onclick="goBack()">← Back</button>
     </div>
     <div id="lb-list"></div>
   </div>
@@ -1822,7 +1812,8 @@ function renderResults(r, finalGeos) {
 // ═══════════════════════════════════════════════════════════════
 // 11. LEADERBOARD
 // ═══════════════════════════════════════════════════════════════
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwoxVZ7l1B7HwEZ_9yhzTW6bYkh6on3LdZAW7MR9ByBEjBMX5bDKuvR2HsBELLwujMN/exec';
+// ↓ Paste your deployed Apps Script Web App URL here
+const SHEETS_URL = 'YOUR_APPS_SCRIPT_EXEC_URL';
 
 function saveToLeaderboard(r) {
   const routeDetail = trucks.filter(t=>t.orders.length>0).map(t => {
@@ -1837,132 +1828,59 @@ function saveToLeaderboard(r) {
     violations: r.violations.length, time: formatTime(r.elapsedSeconds),
     timestamp: r.timestamp, routes: routeDetail
   };
-  // Keep local copy for offline fallback
-  const local = JSON.parse(sessionStorage.getItem('routing_lb') || '[]');
-  local.push(entry);
-  local.sort((a,b)=>b.score-a.score);
-  sessionStorage.setItem('routing_lb', JSON.stringify(local));
+  leaderboard.push(entry);
+  leaderboard.sort((a,b)=>b.score-a.score);
+  sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
 
-  // Write to Google Sheets — action=write so the script can distinguish
+  // Sync to Google Sheets
   const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
-  const matchPct = r.sb && r.sb.routematch ? Math.round((r.sb.routematch.matchPct||0)) + '%' : '0%';
-  const violations = r.violations && r.violations.length ? r.violations.join('; ') : 'none';
+  const matchPct = r.sb && r.sb.routematch
+    ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
   const params = new URLSearchParams({
-    action: 'write',
     playerName: r.playerName,
     score: r.totalScore,
     grade: r.grade,
-    miles: r.yourMiles || 0,
+    miles: r.yourMiles,
     trucks: r.numTrucks,
     routeMatch: matchPct,
-    violations: violations,
     time: formatTime(r.elapsedSeconds),
     routes: routeSummary,
     timestamp: new Date(r.timestamp).toISOString()
   });
-  fetch(SHEETS_URL + '?' + params.toString(), { mode: 'no-cors' })
-    .catch(err => console.warn('Sheets write error:', err));
+  const sheetUrl = SHEETS_URL + '?' + params.toString();
+  console.log('Sending to Sheets:', sheetUrl);
+  fetch(sheetUrl, { mode: 'no-cors' }).catch(err => console.log('Sheets error:', err));
 }
 
-async function fetchLeaderboard() {
+function renderLeaderboard() {
   const list = document.getElementById('lb-list');
-  const btn = document.getElementById('lb-refresh-btn');
-  list.innerHTML = '<div class="lb-status loading">Loading leaderboard…</div>';
-  if (btn) btn.disabled = true;
-
-  try {
-    const res = await fetch(SHEETS_URL + '?action=read', { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    // data should be an array of row objects from the sheet
-    const rows = Array.isArray(data) ? data : (data.rows || data.values || []);
-    const remote = rows.map(row => ({
-      name:       row.playerName || row[0] || 'Anonymous',
-      score:      Number(row.score || row[1]) || 0,
-      grade:      row.grade || row[2] || '—',
-      trucks:     Number(row.trucks || row[5]) || 0,
-      miles:      Number(row.miles || row[3]) || 0,
-      violations: 0,                       // not stored separately
-      time:       row.time || row[6] || '—',
-      timestamp:  row.timestamp || row[8] || '',
-      routeMatch: row.routeMatch || row[4] || '',
-      routes:     parseRouteSummary(row.routes || row[7] || '')
-    })).sort((a,b) => b.score - a.score);
-
-    // Merge: prefer remote, deduplicate by (name + timestamp) keeping highest score
-    const seen = new Set();
-    const merged = remote.filter(e => {
-      const key = e.name + '|' + e.timestamp;
-      if (seen.has(key)) return false;
-      seen.add(key); return true;
-    });
-
-    renderLeaderboard(merged);
-  } catch (err) {
-    console.warn('Sheets read error:', err);
-    // Fall back to local sessionStorage data
-    const local = JSON.parse(sessionStorage.getItem('routing_lb') || '[]');
-    if (local.length) {
-      renderLeaderboard(local);
-      const note = document.createElement('div');
-      note.className = 'lb-error-note';
-      note.textContent = '⚠️ Could not reach leaderboard server — showing your session scores only.';
-      note.style.cssText = 'text-align:center;padding:6px;color:var(--text3);font-size:12px;';
-      document.getElementById('lb-list').prepend(note);
-    } else {
-      list.innerHTML = '<div class="lb-status error">Could not load leaderboard.<br>'
-        + '<span style="font-size:13px">Check the Apps Script is deployed and allows anonymous access.</span></div>';
-    }
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-function parseRouteSummary(str) {
-  if (!str) return [];
-  // "Truck 1: StoreA→StoreB | Truck 2: StoreC" → array of route objects
-  return str.split(' | ').map((part, ri) => {
-    const [namePart, stopsPart] = part.split(': ');
-    const stops = stopsPart ? stopsPart.split('→') : [];
-    return { name: namePart || 'Truck ' + (ri+1), stops, miles: 0, weight: 0 };
-  });
-}
-
-function renderLeaderboard(entries) {
-  const list = document.getElementById('lb-list');
-  const currentPlayer = playerName || '';
-  if (!entries || !entries.length) {
-    list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>';
-    return;
-  }
+  if (!leaderboard.length) { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; return; }
   const gc = {S:'#fcd34d',A:'#6ee7b7',B:'#93c5fd',C:'#c4b5fd',D:'#fca5a5'};
-  list.innerHTML = entries.map((e, i) => {
+  list.innerHTML = leaderboard.map((e,i) => {
     const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
     const uid = 'lb-routes-'+i;
-    const isOwn = e.name === currentPlayer;
     let routesHtml = '';
     if (e.routes && e.routes.length) {
       routesHtml = `<div class="lb-routes" id="${uid}" style="display:none">` +
-        e.routes.map((r, ri) => {
+        e.routes.map((r,ri) => {
           const col = TRUCK_COLORS[ri % TRUCK_COLORS.length];
           return `<div class="lb-route-row">
             <div class="lb-route-name" style="border-left:3px solid ${col};padding-left:6px;">${r.name}</div>
             <div class="lb-route-stops">${r.stops.join(' → ')}</div>
-            ${r.miles ? `<div class="lb-route-stats">${r.miles} mi · ${(r.weight||0).toLocaleString()} lbs</div>` : ''}
+            <div class="lb-route-stats">${r.miles} mi · ${r.weight.toLocaleString()} lbs</div>
           </div>`;
         }).join('') +
       '</div>';
     }
-    const extra = e.routeMatch ? ` · ${e.routeMatch} match` : '';
-    return `<div class="lb-row${isOwn ? ' lb-own' : ''}">
+    return `<div class="lb-row">
       <div class="lb-rank">${rank}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="lb-name">${e.name}${isOwn ? ' <span style="font-size:11px;color:var(--accent)">you</span>' : ''}</span>
-          <span class="lb-grade" style="color:${gc[e.grade]||'var(--text2)'}">${e.grade}</span>
+          <span class="lb-name">${e.name}</span>
+          <span class="lb-grade" style="color:${gc[e.grade]}">${e.grade}</span>
         </div>
-        <div class="lb-meta">${e.trucks} truck${e.trucks!==1?'s':''} · ${e.miles?e.miles.toLocaleString()+' mi · ':''}${e.time}${extra}</div>
-        ${e.routes && e.routes.length ? `<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>` : ''}
+        <div class="lb-meta">${e.trucks} trucks · ${e.miles?e.miles.toLocaleString()+' mi · ':''} ${e.violations} violation${e.violations!==1?'s':''} · ${e.time}</div>
+        ${e.routes?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''}
         ${routesHtml}
       </div>
       <div class="lb-score">${e.score}</div>
@@ -1992,8 +1910,8 @@ function goBack() { stopTimer(); showScreen('screen-intro'); }
 function showLeaderboard() {
   fromScreen = document.querySelector('.screen.active')?.id || 'intro';
   stopTimer();
+  renderLeaderboard();
   showScreen('screen-leaderboard');
-  fetchLeaderboard();
 }
 
 function startTimer() {
