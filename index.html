@@ -1812,8 +1812,7 @@ function renderResults(r, finalGeos) {
 // ═══════════════════════════════════════════════════════════════
 // 11. LEADERBOARD
 // ═══════════════════════════════════════════════════════════════
-// ↓ Paste your deployed Apps Script Web App URL here
-const SHEETS_URL = 'YOUR_APPS_SCRIPT_EXEC_URL';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwoxVZ7l1B7HwEZ_9yhzTW6bYkh6on3LdZAW7MR9ByBEjBMX5bDKuvR2HsBELLwujMN/exec';
 
 function saveToLeaderboard(r) {
   const routeDetail = trucks.filter(t=>t.orders.length>0).map(t => {
@@ -1832,11 +1831,13 @@ function saveToLeaderboard(r) {
   leaderboard.sort((a,b)=>b.score-a.score);
   sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
 
-  // Sync to Google Sheets
+  // Sync to Google Sheets — only if this is a real scored submission
+  if (!r.playerName || !r.totalScore) return;
   const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
   const matchPct = r.sb && r.sb.routematch
     ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
   const params = new URLSearchParams({
+    action: 'write',
     playerName: r.playerName,
     score: r.totalScore,
     grade: r.grade,
@@ -1910,8 +1911,42 @@ function goBack() { stopTimer(); showScreen('screen-intro'); }
 function showLeaderboard() {
   fromScreen = document.querySelector('.screen.active')?.id || 'intro';
   stopTimer();
-  renderLeaderboard();
   showScreen('screen-leaderboard');
+  // Show local scores immediately while we fetch from Sheets
+  renderLeaderboard();
+  // Fetch live scores from Google Sheets
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '<div class="lb-empty" style="opacity:.6">Loading scores…</div>';
+  fetch(SHEETS_URL + '?action=read')
+    .then(r => r.json())
+    .then(data => {
+      if (!Array.isArray(data) || !data.length) {
+        // Fall back to local session scores
+        renderLeaderboard();
+        return;
+      }
+      // Merge sheet scores with any local session scores, deduplicate by timestamp
+      const sheetEntries = data.map(row => ({
+        name:      row.playerName || row.name || 'Anonymous',
+        score:     Number(row.score) || 0,
+        grade:     row.grade || '—',
+        trucks:    Number(row.trucks) || 0,
+        miles:     Number(row.miles) || 0,
+        violations:Number(row.violations) || 0,
+        time:      row.time || '—',
+        timestamp: row.timestamp || '',
+        routes:    row.routes ? String(row.routes).split(' | ').map(r => ({ name: r.split(':')[0]?.trim(), stops: r.split(':')[1]?.split('→').map(s=>s.trim()) || [] })) : []
+      }));
+      const seen = new Set(leaderboard.map(e => e.timestamp));
+      sheetEntries.forEach(e => { if (!seen.has(e.timestamp)) leaderboard.push(e); });
+      leaderboard.sort((a,b) => b.score - a.score);
+      sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
+      renderLeaderboard();
+    })
+    .catch(() => {
+      // Network error or CORS — just show whatever is in session
+      renderLeaderboard();
+    });
 }
 
 function startTimer() {
