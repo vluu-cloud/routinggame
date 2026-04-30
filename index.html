@@ -2229,42 +2229,61 @@ function buildAnalysis(r) {
     html += '</div>';
   }
 
-  // Miles reconciliation summary
+  // Miles reconciliation — calculated by truck to avoid double-counting
   var totalGap = (r.yourMiles || 0) - (r.optimalMiles || 0);
-  if (totalGap !== 0 && r.optimalMiles) {
-    var totalExtra = 0;
-    var reconcileRows = '';
-    SYS_ROUTES.forEach(function(sr, i) {
-      var sg = sysStoreGroups[i];
-      var srOrders = ORDERS.filter(function(o){ return sg.orderIds.has(o.id); });
-      var userTruck = sysToUserTruck[sr.num];
-      var mi = sysRouteMiles[sr.num];
-      if (!userTruck) {
-        var involvedTrucksR = {};
-        srOrders.forEach(function(o){ var t = orderToUserTruck[o.id]; if(t) involvedTrucksR[t.id]=t; });
-        var truckMi = Math.round(Object.values(involvedTrucksR).reduce(function(s,t){ return s+getTruckMiles(t); }, 0));
-        var extra = truckMi - mi;
-        if (extra !== 0) {
-          totalExtra += extra;
-          var ordered = optimizeStopOrder(Array.from(sg.stores));
-          var stopsStr = ordered.map(function(id){ return STORE_NAMES[id]; }).join(' + ');
-          reconcileRows += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid var(--border);font-size:13px;">'
-            + '<span style="color:var(--text2);">Rt.' + sr.num + ' — ' + stopsStr + '</span>'
-            + '<span style="font-family:var(--mono);color:' + (extra>0?'#fca5a5':'var(--green)') + ';font-weight:600">'
-            + (extra>0?'+':'') + extra + ' mi</span></div>';
-        }
-      }
+  if (r.optimalMiles) {
+    var reconHtml = '';
+
+    // Header row
+    reconHtml += '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:0 12px;padding:4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);">'
+      + '<span>Truck</span><span style="text-align:right">Your mi</span><span style="text-align:right">Optimal</span><span style="text-align:right">Diff</span></div>';
+
+    activeTrucks.forEach(function(t) {
+      var tcol = TRUCK_COLORS[activeTrucks.indexOf(t) % TRUCK_COLORS.length];
+      var truckMi = getTruckMiles(t);
+      var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){ return STORE_NAMES[id]; }).join(' → ');
+      var isMatched = matchedTruckIds.has(t.id);
+
+      // Find which system route(s) this truck's orders belong to
+      var coveredRouteNums = [];
+      var coveredSysMi = 0;
+      var seenRoutes = new Set();
+      t.orders.forEach(function(o){
+        sysStoreGroups.forEach(function(sg, i){
+          if (sg.orderIds.has(o.id) && !seenRoutes.has(i)) {
+            seenRoutes.add(i);
+            coveredRouteNums.push('Rt.' + SYS_ROUTES[i].num);
+            coveredSysMi += sysRouteMiles[SYS_ROUTES[i].num] || 0;
+          }
+        });
+      });
+
+      var diff = truckMi - Math.round(coveredSysMi);
+      var diffColor = diff > 5 ? '#fca5a5' : diff < -5 ? 'var(--green)' : 'var(--text3)';
+      var diffStr = diff === 0 ? '—' : (diff > 0 ? '+' : '') + diff + ' mi';
+      var routeLabel = isMatched ? coveredRouteNums.join(', ') : '(' + coveredRouteNums.join(' + ') + ')';
+
+      reconHtml += '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:0 12px;align-items:center;padding:5px 0;border-top:1px solid var(--border);font-size:13px;">'
+        + '<div style="display:flex;align-items:center;gap:6px;min-width:0;">'
+        + '<span style="width:8px;height:8px;border-radius:50%;background:' + tcol + ';flex-shrink:0"></span>'
+        + '<div style="min-width:0;">'
+        + '<div style="color:var(--text);font-weight:600;">' + t.name + ' <span style="font-weight:400;color:var(--text3);font-size:12px;">→ ' + routeLabel + '</span></div>'
+        + '<div style="color:var(--text3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + stores + '</div>'
+        + '</div></div>'
+        + '<span style="font-family:var(--mono);text-align:right;white-space:nowrap;">' + truckMi + ' mi</span>'
+        + '<span style="font-family:var(--mono);text-align:right;white-space:nowrap;color:var(--green);">' + Math.round(coveredSysMi) + ' mi</span>'
+        + '<span style="font-family:var(--mono);text-align:right;white-space:nowrap;font-weight:700;color:' + diffColor + '">' + diffStr + '</span>'
+        + '</div>';
     });
-    if (reconcileRows) {
-      html += '<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
-        + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:6px;">📐 Miles Reconciliation</div>'
-        + reconcileRows
-        + '<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:2px solid var(--border2);margin-top:4px;font-weight:700;">'
-        + '<span>Total gap vs optimal</span>'
-        + '<span style="font-family:var(--mono);color:' + (totalGap>0?'#fca5a5':'var(--green)') + '">'
-        + (totalGap>0?'+':'') + totalGap + ' mi (your ' + r.yourMiles + ' vs optimal ' + r.optimalMiles + ')</span>'
-        + '</div></div>';
-    }
+
+    html += '<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:6px;">📐 Miles Reconciliation</div>'
+      + reconHtml
+      + '<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:2px solid var(--border2);margin-top:6px;font-weight:700;">'
+      + '<span>Total gap vs optimal</span>'
+      + '<span style="font-family:var(--mono);color:' + (totalGap > 0 ? '#fca5a5' : totalGap < 0 ? 'var(--green)' : 'var(--text3)') + '">'
+      + (totalGap > 0 ? '+' : '') + totalGap + ' mi (your ' + r.yourMiles + ' vs optimal ' + r.optimalMiles + ')</span>'
+      + '</div></div>';
   }
 
   diffEl.innerHTML = '<div class="diff-header">\ud83d\udcca Route Comparison</div>' + html;
