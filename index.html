@@ -295,6 +295,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 #screen-results{overflow-y:auto;align-items:center;padding:2rem;
   background:radial-gradient(ellipse 70% 50% at 50% 0%, rgba(15,186,128,0.07) 0%,transparent 60%);}
 .results-wrap{max-width:660px;width:100%;margin:auto;}
+.analysis-section{max-width:min(1100px,96vw);width:100%;margin:1.5rem auto 0;}
 .results-top{display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:center;margin-bottom:1.5rem;}
 .score-circle{
   width:120px;height:120px;border-radius:50%;border:3px solid var(--accent);
@@ -605,21 +606,34 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="map-badge">📍 Real GPS distances · Bay Area stores</div>
     <div class="rules-card">
       <h3>How scoring works</h3>
-      <div class="rule-row"><span class="rule-icon">🛣️</span><div><strong>Minimize total miles</strong><span class="rule-pts star">500 pts</span> — Every extra mile costs points proportionally. Drive the optimal miles and get full points; every percent over optimal is a percent off your score.
+      <div class="rule-row"><span class="rule-icon">🛣️</span><div><strong>Minimize total miles</strong><span class="rule-pts star">400 pts</span> — Every extra mile costs points proportionally.
         <div style="margin-top:8px;background:rgba(15,186,128,0.06);border:1px solid rgba(15,186,128,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
-          <strong style="color:var(--text);">Formula:</strong> 500 × (optimal miles ÷ your miles)<br>
-          At optimal → <strong style="color:var(--green);">500 pts</strong> &nbsp;·&nbsp;
-          5% over → <strong style="color:var(--green);">~476 pts</strong> &nbsp;·&nbsp;
-          10% over → <strong style="color:var(--amber);">~455 pts</strong> &nbsp;·&nbsp;
-          25% over → <strong style="color:var(--red);">400 pts</strong>
+          <strong style="color:var(--text);">Formula:</strong> 400 × (optimal miles ÷ your miles)<br>
+          At optimal → <strong style="color:var(--green);">400 pts</strong> &nbsp;·&nbsp;
+          5% over → <strong style="color:var(--green);">~381 pts</strong> &nbsp;·&nbsp;
+          10% over → <strong style="color:var(--amber);">~364 pts</strong> &nbsp;·&nbsp;
+          25% over → <strong style="color:var(--red);">320 pts</strong>
         </div>
       </div></div>
-      <div class="rule-row"><span class="rule-icon">🗺️</span><div><strong>Route match vs system</strong><span class="rule-pts">350 pts</span> — Every order in the correct grouping earns its share. Each of the 25 orders is worth 14 pts — no cliffs, no buckets.
-        <div style="margin-top:8px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
-          <strong style="color:var(--text);">Formula:</strong> 350 × (correct orders ÷ 25)<br>
-          25/25 correct → <strong style="color:var(--green);">350 pts</strong> &nbsp;·&nbsp;
-          20/25 → <strong style="color:var(--amber);">280 pts</strong> &nbsp;·&nbsp;
-          15/25 → <strong style="color:var(--red);">210 pts</strong>
+      <div class="rule-row"><span class="rule-icon">🗺️</span><div><strong>Route match vs system</strong><span class="rule-pts">300 pts</span> — How closely your store groupings match the optimal solution. Each of the 25 orders is worth 12 pts.
+        <div style="margin-top:8px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
+          <strong style="color:var(--text);">Formula:</strong> 300 × (matched orders ÷ 25)<br>
+          25/25 matched → <strong style="color:var(--green);">300 pts</strong> &nbsp;·&nbsp;
+          20/25 → <strong style="color:var(--amber);">240 pts</strong> &nbsp;·&nbsp;
+          15/25 → <strong style="color:var(--red);">180 pts</strong>
+        </div>
+      </div></div>
+      <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery window compliance</strong><span class="rule-pts">150 pts</span> — Every store has a delivery window (shown on each order). Your truck must be able to reach all its stops within those windows.
+        <div style="margin-top:8px;background:rgba(240,166,35,0.06);border:1px solid rgba(240,166,35,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
+          <strong style="color:var(--text);">Formula:</strong> 150 × (reachable stores ÷ total stores)<br>
+          <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;">
+            <span><span style="color:#fca5a5;font-weight:700;">4–8am</span> — tight early window, must depart Sacramento ~2am</span>
+            <span><span style="color:#fcd34d;font-weight:700;">5–9am / 6–10am</span> — moderate window, some flexibility</span>
+            <span><span style="color:#86efac;font-weight:700;">7–11am</span> — flexible window, most pairings work</span>
+          </div>
+          <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px;font-size:12px;color:var(--text3);">
+            💡 <strong style="color:var(--text);">Tip:</strong> Windows help explain why certain stores are paired together — a 4–8am store needs to be paired with stores reachable before its window closes.
+          </div>
         </div>
       </div></div>
       <div class="rule-row"><span class="rule-icon">📦</span><div><strong>Assign all orders</strong><span class="rule-pts">100 pts</span> — Every order placed on a truck earns its share. Each of the 25 orders is worth 4 pts.
@@ -632,13 +646,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div></div>
       <div class="rule-row"><span class="rule-icon">⚡</span><div><strong>Speed bonus</strong><span class="rule-pts star">50 pts</span> — Full points if you finish with 4+ minutes left. Points drop linearly from there down to 0 at time's up.
         <div style="margin-top:8px;border:1px solid var(--border);border-radius:7px;overflow:hidden;font-size:13px;"><div style="display:grid;grid-template-columns:1fr 1fr;background:var(--bg3);padding:4px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text3);text-transform:uppercase;font-size:11px;letter-spacing:.7px;"><span>Time remaining</span><span style="text-align:right">Speed pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);background:rgba(15,186,128,0.06);"><span style="color:var(--text2);">4:00+ remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green);">50 pts 🏆</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">3:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green);">38 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">2:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--amber);">25 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">1:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text3);">13 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;"><span style="color:var(--text2);">0:00 (time's up)</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--red);">0 pts</span></div></div>
-      </div></div>
-      <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery windows &amp; P9 priority</strong> — Some stores have strict delivery windows you should be aware of when grouping.
-        <div style="margin-top:8px;background:rgba(240,76,90,0.06);border:1px solid rgba(240,76,90,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.7;">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="background:rgba(240,76,90,0.15);color:#fca5a5;font-size:12px;font-weight:700;padding:2px 7px;border-radius:3px;">P9</span><strong style="color:var(--text);">Priority 9 — must arrive 4:00–8:00am</strong></div>
-          These stores have a hard early-morning delivery window. They need to depart Sacramento around <strong style="color:var(--text);">1:30–2:00am</strong> to arrive on time.<br><br>
-          <strong style="color:var(--text);">Key implication:</strong> P9 stores should be grouped with other P9 stores, or with stores that are geographically on the same path. Pairing a P9 store with a non-P9 store that opens at 7am can still work — as long as the P9 stop is made first and the second stop is close by.
-        </div>
       </div></div>
     </div>
     <div class="name-row">
@@ -754,7 +761,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div class="mc-item"><div class="mc-num" id="r-your-miles">—</div><div class="mc-label">Your miles</div></div>
         <div class="mc-vs">vs</div>
         <div class="mc-item"><div class="mc-num opt" id="r-opt-miles">—</div><div class="mc-label">Optimal</div></div>
-        <div class="mc-item"><div class="mc-num" id="r-match-pct" style="font-size:22px">—</div><div class="mc-label">Route Match</div></div>
+        <div class="mc-item"><div class="mc-num" id="r-match-pct" style="font-size:22px">—</div><div class="mc-label r-match-label">Route Match</div></div>
         <div class="mc-item"><div class="mc-num" id="r-eff-pct" style="font-size:22px">—</div><div class="mc-label">Efficiency</div></div>
       </div>
       <div class="mc-eff-bar">
@@ -774,13 +781,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
     <!-- Route Analysis -->
     <div class="analysis-section" id="analysis-section">
-      <!-- Map view toggle -->
-      <div class="map-toggle-bar">
-        <button class="map-toggle-btn active" id="toggle-user" onclick="switchResultsView('user')">🚛 Your Routes</button>
-        <button class="map-toggle-btn" id="toggle-system" onclick="switchResultsView('system')">✅ System Routes</button>
-      </div>
-      <div id="results-map-wrap">
-        <div id="results-map"></div>
+      <!-- Side-by-side maps -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">🚛 Your Routes</div>
+          <div id="results-map-user" style="width:100%;height:480px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);"></div>
+          <div id="legend-user" style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 4px 0;font-size:12px;"></div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">✅ System Routes</div>
+          <div id="results-map-system" style="width:100%;height:480px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);"></div>
+          <div id="legend-system" style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 4px 0;font-size:12px;"></div>
+        </div>
       </div>
       <!-- Diff breakdown -->
       <div class="diff-section" id="diff-section"></div>
@@ -848,6 +860,69 @@ const STORE_ABBR = {
   '0010':'SRo','0011':'PH','0065':'Pb','0166':'Nv','0181':'Cn','0242':'Ri',
   '0268':'Bu','0269':'Ok','0283':'WV','0440':'Bt','0459':'Ra','0462':'Wn',
 };
+
+// ═══════════════════════════════════════════════════════════════
+// WINDOW FEASIBILITY HELPERS
+// ═══════════════════════════════════════════════════════════════
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, toR = Math.PI/180;
+  const dLat = (lat2-lat1)*toR, dLon = (lon2-lon1)*toR;
+  const sdLat = Math.sin(dLat/2), sdLon = Math.sin(dLon/2);
+  const a = sdLat*sdLat + Math.cos(lat1*toR)*Math.cos(lat2*toR)*sdLon*sdLon;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function roadKm(a, b) { return haversineKm(a.lat, a.lng, b.lat, b.lng) * 1.3; }
+
+// Returns { ok, violations:[{store,msg}], waitMins }
+// Tries all orderings of stores, returns best feasible result
+function checkWindowFeasibility(truckOrders) {
+  const SPEED_KMH = 80, SERVICE_MIN = 45;
+  const storeIds = [...new Set(truckOrders.map(o=>o.store))];
+  if (storeIds.length <= 1) return { ok:true, violations:[], waitMins:0 };
+  const stores = storeIds.map(id => {
+    const o = truckOrders.find(o=>o.store===id);
+    return { id, name:o.storeName, winOpen:o.winOpen, winClose:o.winClose, coords:STORE_COORDS[id] };
+  });
+  const perms = arr => arr.length<=1 ? [arr] : arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)]).map(p=>[v,...p]));
+  let best = null;
+  for (const ordering of perms(stores)) {
+    const viols = []; let wait = 0; let cur = DEPOT; let t;
+    const distFirst = roadKm(cur, ordering[0].coords);
+    const travelFirst = (distFirst/SPEED_KMH)*60;
+    t = ordering[0].winOpen; // arrive exactly at window open
+    cur = ordering[0].coords;
+    t += SERVICE_MIN;
+    let feasible = true;
+    for (let i=1; i<ordering.length; i++) {
+      const s = ordering[i];
+      const travel = (roadKm(cur, s.coords)/SPEED_KMH)*60;
+      const arrival = t + travel;
+      if (arrival > s.winClose) {
+        feasible = false;
+        const ah = Math.floor(arrival/60), am = Math.round(arrival%60);
+        viols.push({ store:s.name, msg:`Arrives ~${ah}:${String(am).padStart(2,'0')} but window closes ${s.winClose/60}:00` });
+      }
+      if (arrival < s.winOpen) { wait += s.winOpen - arrival; t = s.winOpen; }
+      else t = arrival;
+      t += SERVICE_MIN;
+      cur = s.coords;
+    }
+    if (feasible && (!best || wait < best.waitMins)) best = { ok:true, violations:[], waitMins:wait };
+    else if (!feasible && !best) best = { ok:false, violations:viols, waitMins:0 };
+  }
+  return best || { ok:true, violations:[], waitMins:0 };
+}
+
+function windowBadgeColor(winOpen) {
+  // winOpen in minutes from midnight
+  if (winOpen <= 4*60) return '#fca5a5'; // 4am — tight
+  if (winOpen <= 6*60) return '#fcd34d'; // 5-6am — early
+  return '#86efac'; // 7am+ — flexible
+}
+function windowLabel(o) {
+  const oh = o.winOpen/60, ch = o.winClose/60;
+  return `${oh}–${ch}am`;
+}
 
 // All points for distance matrix (depot first, then stores in order)
 const DIST_POINTS = [
@@ -1097,7 +1172,7 @@ async function fetchRouteGeo(latLngs) {
     const coords = latLngs.map(([lat,lng]) => `${lng},${lat}`).join(';');
     const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
     const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 7000);
+    const t = setTimeout(() => controller.abort(), 15000);
     const resp = await fetch(url, { signal:controller.signal });
     clearTimeout(t);
     const data = await resp.json();
@@ -1313,22 +1388,32 @@ async function submitRoutes() {
   document.getElementById('submit-btn').textContent = '⏳ Calculating routes…';
   document.getElementById('submit-btn').disabled = true;
 
-  // Fetch final route geometries for results map
+  // Fetch user route geometries and system route geometries in parallel
   const finalGeos = {};
-  await Promise.all(
-    trucks.filter(t=>t.orders.length>0).map(async (truck, i) => {
-      const stores = optimizeStopOrder(getUniqueStores(truck.orders));
-      const lls = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])]; // one-way
-      const geo = await fetchRouteGeo(lls);
-      finalGeos[truck.id] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
-    })
-  ).catch(()=>{});
+  const sysGeoMap = {};
+
+  const userPromises = trucks.filter(t=>t.orders.length>0).map(async (truck, i) => {
+    const stores = optimizeStopOrder(getUniqueStores(truck.orders));
+    const lls = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
+    const geo = await fetchRouteGeo(lls).catch(()=>null);
+    finalGeos[truck.id] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
+  });
+
+  const sysPromises = SYS_ROUTES.map(async (sr, i) => {
+    const storeIds = sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean);
+    const ordered = optimizeStopOrder(storeIds);
+    const lls = [[DEPOT.lat,DEPOT.lng], ...ordered.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
+    const geo = await fetchRouteGeo(lls).catch(()=>null);
+    sysGeoMap[sr.num] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
+  });
+
+  await Promise.allSettled([...userPromises, ...sysPromises]);
 
   const result = calculateScore();
   saveToLeaderboard(result);
   renderResults(result, finalGeos);
   showScreen('screen-results');
-  setTimeout(() => initResultsMap(finalGeos), 150);
+  setTimeout(() => initResultsMap(finalGeos, sysGeoMap), 150);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1442,9 +1527,10 @@ function makePoolChip(o) {
   d.title = `${o.id}\n${o.storeName} (${o.store})\nWindow: ${o.window}\nCases: ${o.cases} · ${Math.round(o.weight).toLocaleString()} lbs`;
 
   let flags = '';
-  if (o.priority===9) flags += '<span class="cflag cf-p9" title="Priority 9 — must arrive 4:00–8:00am. Departs Sacramento ~1:30am.">P9</span>';
+  const wCol = windowBadgeColor(o.winOpen);
+  flags += `<span class="cflag cf-tw" style="background:rgba(0,0,0,0.25);color:${wCol};border:1px solid ${wCol}40;" title="Delivery window: ${o.window}">${windowLabel(o)}</span>`;
+  if (o.priority===9) flags += '<span class="cflag cf-p9" title="Priority 9 — must arrive 4:00–8:00am.">P9</span>';
   if (o.restricted) flags += `<span class="cflag cf-48">48'</span>`;
-  if (o.priority===9) flags += `<span class="cflag cf-tw" title="Delivery window">${o.window}</span>`;
 
   d.innerHTML = `<div class="chip-id">${o.id}</div><div class="chip-store">${o.storeName}</div><div class="chip-sub">${o.cases.toLocaleString()} cs · ${Math.round(o.weight).toLocaleString()} lbs</div><div class="chip-flags">${flags}</div>`;
   d.addEventListener('dragstart', e => { draggedOrder=o; dragSource='pool'; setTimeout(()=>d.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
@@ -1470,13 +1556,20 @@ function renderTrucks() {
 
     const card = document.createElement('div');
     card.className = 'truck-card';
+
+    const wCheck = t.orders.length > 0 ? checkWindowFeasibility(t.orders) : null;
+    const wIndicator = !wCheck || t.orders.length===0 ? '' :
+      wCheck.ok && wCheck.waitMins < 60 ? '<span style="font-size:12px;background:rgba(15,186,128,0.15);color:var(--green);padding:2px 7px;border-radius:3px;font-weight:700;">🟢 Windows OK</span>' :
+      wCheck.ok ? '<span style="font-size:12px;background:rgba(251,191,36,0.15);color:var(--amber);padding:2px 7px;border-radius:3px;font-weight:700;" title="Windows are feasible but some waiting time between stops">🟡 Windows tight</span>' :
+      `<span style="font-size:12px;background:rgba(240,76,90,0.15);color:#fca5a5;padding:2px 7px;border-radius:3px;font-weight:700;" title="${wCheck.violations.map(v=>v.store+': '+v.msg).join(' | ')}">🔴 Window conflict</span>`;
     card.innerHTML = `
       <div class="truck-head">
         <div class="truck-color-bar" style="background:${color}"></div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             <span class="truck-name">${t.name}</span>
             ${totW>CAP.weight?`<span style="font-size:12px;background:rgba(240,76,90,0.2);color:#fca5a5;padding:2px 6px;border-radius:3px;font-weight:700">⚠ ${Math.round(totW-CAP.weight).toLocaleString()} lbs over weight</span>`:''}
+            ${wIndicator}
           </div>
           <div style="display:flex;gap:8px;align-items:center;margin-top:1px;">
             <span class="truck-stats">${t.orders.length} orders · ${totC.toLocaleString()} cs · ${Math.round(totW).toLocaleString()} lbs</span>
@@ -1519,6 +1612,8 @@ function makeTruckRow(o, tid) {
   d.draggable = true;
   d.dataset.id = o.id;
   let flags = '';
+  const wCol = windowBadgeColor(o.winOpen);
+  flags += `<span class="cflag cf-tw" style="background:rgba(0,0,0,0.25);color:${wCol};border:1px solid ${wCol}40;" title="Delivery window: ${o.window}">${windowLabel(o)}</span>`;
   if (o.priority===9) flags += '<span class="cflag cf-p9" title="Priority 9 — must arrive 4:00–8:00am. Departs Sacramento ~1:30am.">P9</span>';
   if (o.restricted) flags += `<span class="cflag cf-48">48'</span>`;
   d.innerHTML = `<span class="or-store">${o.storeName}</span><span class="or-cases">${o.cases.toLocaleString()} cs</span><span class="or-weight">${Math.round(o.weight).toLocaleString()} lbs</span><span class="chip-flags">${flags}</span>`;
@@ -1561,49 +1656,53 @@ function updateTopBar() {
 function calculateScore() {
   const violations=[], sb={};
 
-  // 1. Miles efficiency (500 pts) — fully proportional: every extra mile costs points.
+  // 1. Miles efficiency (400 pts)
   const yourMiles=getTotalMiles();
   let milesScore=0;
   if (yourMiles===0) { milesScore=0; }
   else if (optimalMiles) {
-    milesScore = Math.round(500 * Math.min(1, optimalMiles / yourMiles));
-  } else { milesScore=250; }
-  sb.miles={label:'Miles efficiency',score:milesScore,max:500,pct:milesScore/500,
+    milesScore = Math.round(400 * Math.min(1, optimalMiles / yourMiles));
+  } else { milesScore=200; }
+  sb.miles={label:'Miles efficiency',score:milesScore,max:400,pct:milesScore/400,
     detail:optimalMiles?`Your ${yourMiles.toLocaleString()} mi vs optimal ${optimalMiles.toLocaleString()} mi (${Math.round((optimalMiles/yourMiles)*100)}%)`:`${yourMiles.toLocaleString()} mi total`};
 
-  // 2. Route match vs system (300 pts) — order-level matching
-  // For each sys route, find the user truck that contains the most of its orders
-  // Use order-ID based matching so same-store routes (W Vallejo) are handled correctly
-  const sysStoreGroups=SYS_ROUTES.map(sr=>({
-    num:sr.num,
-    stores:new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean)),
+  // 2. Window compliance (350 pts) — can each truck serve all its stops within delivery windows?
+  const activeTruckList = trucks.filter(t=>t.orders.length>0);
+  let windowViolations = 0, totalWindowedStores = 0;
+  const truckWindowResults = {};
+  activeTruckList.forEach(t => {
+    const storeIds = [...new Set(t.orders.map(o=>o.store))];
+    totalWindowedStores += storeIds.length;
+    const result = checkWindowFeasibility(t.orders);
+    truckWindowResults[t.id] = result;
+    if (!result.ok) windowViolations += result.violations.length;
+  });
+  const windowPct = totalWindowedStores > 0 ? Math.round(((totalWindowedStores - windowViolations) / totalWindowedStores) * 100) : 100;
+  const windowScore = Math.round(150 * Math.max(0, (totalWindowedStores - windowViolations) / Math.max(1, totalWindowedStores)));
+  sb.window={label:'Delivery window compliance',score:windowScore,max:150,pct:windowScore/150,
+    detail:`${totalWindowedStores - windowViolations}/${totalWindowedStores} stores reachable within windows (${windowPct}%)`,windowPct,windowViolations,truckWindowResults};
+
+  // Route match — kept for analysis/coaching but not scored
+  const sysGroupsForMatch = SYS_ROUTES.map(sr=>({
+    num:sr.num, stores:new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean)),
     orderIds:new Set(sr.orders)
   }));
-  // Build order→truck lookup
-  const orderToTruckMap={};
-  trucks.filter(t=>t.orders.length>0).forEach(t=>{
-    t.orders.forEach(o=>{ orderToTruckMap[o.id]=t.id; });
-  });
-  // For each sys route, a truck "matches" if it contains ALL and ONLY the orders in that route
-  // (or at minimum, all orders from that route are on the same truck together)
-  function truckMatchesGroup(truck) {
+  const truckMatchesGroup = (truck) => {
     const truckOrderIds=new Set(truck.orders.map(o=>o.id));
-    return sysStoreGroups.find(sg=>{
-      // All sys route orders must be on this truck
+    return sysGroupsForMatch.find(sg=>{
       const sysOnThisTruck=[...sg.orderIds].filter(id=>truckOrderIds.has(id));
       if(sysOnThisTruck.length!==sg.orderIds.size) return false;
-      // The truck should not have orders belonging to a DIFFERENT sys route's store grouping
-      // (allow extra orders only if they share the same store set as this route)
       const extraOrders=truck.orders.filter(o=>!sg.orderIds.has(o.id));
       if(extraOrders.length===0) return true;
-      // Extra orders are OK only if they belong to the same store group
-      const sysStoreSet=sg.stores;
-      return extraOrders.every(o=>sysStoreSet.has(o.store));
+      return extraOrders.every(o=>sg.stores.has(o.store));
     })||null;
-  }
+  };
+  const sysStoreGroups = sysGroupsForMatch;
+  const orderToTruckMap={};
+  activeTruckList.forEach(t=>{ t.orders.forEach(o=>{ orderToTruckMap[o.id]=t.id; }); });
   let matchedOrders=0;
   const matchedTruckSet=new Set();
-  trucks.filter(t=>t.orders.length>0).forEach(truck=>{
+  activeTruckList.forEach(truck=>{
     const mg=truckMatchesGroup(truck);
     if(mg&&!matchedTruckSet.has(truck.id)){
       matchedTruckSet.add(truck.id);
@@ -1611,9 +1710,9 @@ function calculateScore() {
     }
   });
   const matchPct=Math.round((matchedOrders/ORDERS.length)*100);
-  const matchScore=Math.round(350*(matchedOrders/ORDERS.length));
-  sb.routematch={label:'Route match vs system',score:matchScore,max:350,pct:matchScore/350,
-    detail:`${matchedOrders}/${ORDERS.length} orders in correct grouping (${matchPct}%)`,matchPct,matchedOrders};
+  const matchScore=Math.round(300*(matchedOrders/ORDERS.length));
+  sb.routematch={label:'Route match vs system',score:matchScore,max:300,pct:matchedOrders/ORDERS.length,
+    detail:`${matchedOrders}/${ORDERS.length} orders match system grouping (${matchPct}%)`,matchPct,matchedOrders};
 
   // 3. Orders assigned (100 pts)
   const assignedCount=ORDERS.length-poolOrders.length;
@@ -1626,7 +1725,7 @@ function calculateScore() {
   const speedScore = Math.round(50 * Math.min(timeRemaining, 240) / 240);
   sb.speed={label:'Speed bonus',score:speedScore,max:50,pct:speedScore/50,detail:`Completed with ${Math.floor(timeRemaining/60)}m ${timeRemaining%60}s remaining`};
 
-  const totalScore=milesScore+matchScore+assignedScore+speedScore;
+  const totalScore=milesScore+matchScore+windowScore+assignedScore+speedScore;
   let grade='D';
   if (totalScore>=950) grade='S'; else if (totalScore>=800) grade='A'; else if (totalScore>=620) grade='B'; else if (totalScore>=430) grade='C';
 
@@ -1669,11 +1768,14 @@ function renderResults(r, finalGeos) {
   }
   const matchEl=document.getElementById('r-match-pct');
   if (matchEl&&r.sb.routematch) { const mp=r.sb.routematch.matchPct??0; matchEl.textContent=mp+'%'; matchEl.style.color=mp>=90?'var(--green)':mp>=70?'var(--amber)':'var(--red)'; }
+  const matchLbl=document.querySelector('.r-match-label');
+  if (matchLbl) matchLbl.textContent='Route Match';
 
   // Score breakdown
-  const colors = { miles:'#3b7ef8', routematch:'#8b5cf6', assigned:'#0fba80', timewindow:'#f0a623', speed:'#06c0d4' };
+  const colors = { miles:'#3b7ef8', routematch:'#8b5cf6', window:'#f0a623', assigned:'#0fba80', speed:'#06c0d4' };
   let bkHtml = '<h3>Score breakdown</h3>';
   Object.entries(r.sb).forEach(([k,v]) => {
+    if (v.hidden) return;
     const c = colors[k] || 'var(--accent)';
     bkHtml += `<div class="score-row"><div class="score-row-label">${v.label}${v.detail?`<br><span style="font-size:13px;color:var(--text3)">${v.detail}</span>`:''}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${Math.round(v.pct*100)}%;background:${c}"></div></div><div class="score-row-pts" style="color:${c}">${v.score}<span style="color:var(--text3);font-size:13px">/${v.max}</span></div></div>`;
   });
@@ -1873,7 +1975,7 @@ function buildOrderComparison(r) {
     + '<span class="oc-title">📋 Order-Level Assignment Comparison</span>'
     + '<span class="oc-legend">'
     + '<span class="oc-leg-item"><span style="color:var(--green);font-weight:700;">✓</span> Correct</span>'
-    + '<span class="oc-leg-item"><span style="color:#fca5a5;font-weight:700;">✗</span> Wrong truck</span>'
+    + '<span class="oc-leg-item"><span style="color:#fca5a5;font-weight:700;">✗</span> Different grouping</span>'
     + '<span class="oc-leg-item"><span style="color:var(--amber);font-weight:700;">⚠️</span> Unassigned</span>'
     + '</span>'
     + '</div>';
@@ -1949,7 +2051,7 @@ function buildOrderComparison(r) {
         if (extraMi > 0) {
           effNote = '<strong>+' + extraMi + ' mi</strong> vs system. ' + reason.split('.')[0] + '.';
         } else {
-          effNote = 'Grouping mismatch — store belongs with ' + sysStoreNames + '.';
+          effNote = 'System groups this with ' + sysStoreNames + '.';
         }
       } else if (isCorrect) {
         effNote = '<span style="color:var(--green)">✓ Correctly grouped</span>';
@@ -2054,7 +2156,7 @@ function buildAnalysis(r) {
     ? '\u2705 Perfect \u2014 your solution matches the system exactly'
     : matchedCount === 0
       ? '\u274c No routes matched \u2014 see the breakdown below'
-      : (totalSys - matchedCount) + ' route' + (totalSys - matchedCount !== 1 ? 's' : '') + ' need re-grouping';
+      : (totalSys - matchedCount) + ' route' + (totalSys - matchedCount !== 1 ? 's' : '') + ' differ from system';
 
   var html = '<div class="mr-summary">'
     + '<div class="mr-summary-score ' + scoreClass + '">' + matchedCount + '/' + totalSys + '</div>'
@@ -2086,7 +2188,7 @@ function buildAnalysis(r) {
     var hasp9 = srOrders.some(function(o){ return o.priority === 9; });
     var userTruck = sysToUserTruck[sr.num];
     var matchCls = userTruck ? 'matched' : 'unmatched';
-    var matchTxt = userTruck ? '\u2713 ' + userTruck.name : '\u2717 not matched';
+    var matchTxt = userTruck ? '\u2713 ' + userTruck.name : '\u2194 differs from system';
 
     html += '<div class="sys-ov-row ' + matchCls + '">'
       + '<div class="sys-ov-dot" style="background:' + col + '"></div>'
@@ -2146,18 +2248,8 @@ function buildAnalysis(r) {
       + '</div>'
       + '</div>';
 
-    // For unmatched: miles comparison + insight
-    if (!matched) {
-      html += '<div class="ob-miles">'
-        + '<div class="ob-miles-cell"><div class="ob-miles-lbl">System (1 truck)</div>'
-          + '<div class="ob-miles-val better">' + mi + ' mi</div></div>'
-        + '<div class="ob-miles-cell"><div class="ob-miles-lbl">Your approach (' + involvedList.length + ' truck' + (involvedList.length !== 1 ? 's' : '') + ')</div>'
-          + '<div class="ob-miles-val worse">' + userMiTotal + ' mi</div></div>'
-        + '<div class="ob-miles-cell"><div class="ob-miles-lbl">Extra miles</div>'
-          + '<div class="ob-miles-val worse">+' + (milesDiff > 0 ? milesDiff : 0) + ' mi</div></div>'
-        + '</div>';
-
-      if (insight.why) {
+    // For unmatched: insight only (no miles comparison - reconciliation handles miles)
+    if (!matched && insight.why) {
         // Determine the right coaching note:
         //   - stores split across >1 truck  → use the static "cost" text
         //   - stores on same truck but truck has stowaways from other routes → explain the stowaway problem
@@ -2172,15 +2264,14 @@ function buildAnalysis(r) {
         if (isSplit && insight.cost) {
           costNote = insight.cost;
         } else if (extraStoreNames) {
-          costNote = 'Your truck also carries <strong>' + extraStoreNames + '</strong> orders that belong on a separate route. That detour adds the extra miles shown above.';
+          costNote = 'Your truck also carries <strong>' + extraStoreNames + '</strong> orders — that detour adds miles. See reconciliation below.';
         }
         html += '<div class="ob-insight">'
-          + '<div class="ob-insight-lbl">\ud83d\udca1 Why these stores belong together</div>'
+          + '<div class="ob-insight-lbl">\ud83d\udca1 Why the system groups these together</div>'
           + insight.why
-          + (costNote ? '<div style="margin-top:4px;color:var(--text3)"><strong style="color:#fca5a5">Your grouping costs more:</strong> ' + costNote + '</div>' : '')
+          + (costNote ? '<div style="margin-top:4px;color:var(--text3)"><strong style="color:var(--amber)">System reasoning:</strong> ' + costNote + '</div>' : '')
           + '</div>';
       }
-    }
 
     // Column headers
     html += '<div class="ob-col-heads">'
@@ -2216,7 +2307,7 @@ function buildAnalysis(r) {
   var extraTrucks = activeTrucks.filter(function(t){ return !matchedTruckIds.has(t.id); });
   if (extraTrucks.length > 0) {
     html += '<div class="mr-extra"><div class="mr-extra-title">\u26a0\ufe0f '
-      + extraTrucks.length + ' truck' + (extraTrucks.length !== 1 ? 's' : '') + ' with mixed groupings — orders span multiple system routes</div>';
+      + extraTrucks.length + ' truck' + (extraTrucks.length !== 1 ? 's' : '') + ' with mixed groupings</div>';
     extraTrucks.forEach(function(t) {
       var tcol = TRUCK_COLORS[activeTrucks.indexOf(t) % TRUCK_COLORS.length];
       var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){ return STORE_NAMES[id]; }).join(' \u2192 ');
@@ -2229,60 +2320,43 @@ function buildAnalysis(r) {
     html += '</div>';
   }
 
-  // Miles reconciliation — calculated by truck to avoid double-counting
-  var totalGap = (r.yourMiles || 0) - (r.optimalMiles || 0);
+  // Miles reconciliation — two-column: your trucks vs system routes
   if (r.optimalMiles) {
-    var reconHtml = '';
+    var totalGap = (r.yourMiles || 0) - (r.optimalMiles || 0);
 
-    // Header row
-    reconHtml += '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:0 12px;padding:4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);">'
-      + '<span>Truck</span><span style="text-align:right">Your mi</span><span style="text-align:right">Optimal</span><span style="text-align:right">Diff</span></div>';
-
-    activeTrucks.forEach(function(t) {
-      var tcol = TRUCK_COLORS[activeTrucks.indexOf(t) % TRUCK_COLORS.length];
-      var truckMi = getTruckMiles(t);
+    var leftRows = activeTrucks.map(function(t, i) {
+      var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
       var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){ return STORE_NAMES[id]; }).join(' → ');
-      var isMatched = matchedTruckIds.has(t.id);
+      var mi = getTruckMiles(t);
+      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);font-size:13px;">'
+        + '<span style="width:8px;height:8px;border-radius:50%;background:' + col + ';flex-shrink:0"></span>'
+        + '<div><div style="font-weight:600;color:var(--text);">' + t.name + ' <span style="font-family:var(--mono);font-weight:400;color:var(--text3);">' + mi + ' mi</span></div>'
+        + '<div style="font-size:12px;color:var(--text3);">' + stores + '</div></div></div>';
+    }).join('');
 
-      // Find which system route(s) this truck's orders belong to
-      var coveredRouteNums = [];
-      var coveredSysMi = 0;
-      var seenRoutes = new Set();
-      t.orders.forEach(function(o){
-        sysStoreGroups.forEach(function(sg, i){
-          if (sg.orderIds.has(o.id) && !seenRoutes.has(i)) {
-            seenRoutes.add(i);
-            coveredRouteNums.push('Rt.' + SYS_ROUTES[i].num);
-            coveredSysMi += sysRouteMiles[SYS_ROUTES[i].num] || 0;
-          }
-        });
-      });
-
-      var diff = truckMi - Math.round(coveredSysMi);
-      var diffColor = diff > 5 ? '#fca5a5' : diff < -5 ? 'var(--green)' : 'var(--text3)';
-      var diffStr = diff === 0 ? '—' : (diff > 0 ? '+' : '') + diff + ' mi';
-      var routeLabel = isMatched ? coveredRouteNums.join(', ') : '(' + coveredRouteNums.join(' + ') + ')';
-
-      reconHtml += '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:0 12px;align-items:center;padding:5px 0;border-top:1px solid var(--border);font-size:13px;">'
-        + '<div style="display:flex;align-items:center;gap:6px;min-width:0;">'
-        + '<span style="width:8px;height:8px;border-radius:50%;background:' + tcol + ';flex-shrink:0"></span>'
-        + '<div style="min-width:0;">'
-        + '<div style="color:var(--text);font-weight:600;">' + t.name + ' <span style="font-weight:400;color:var(--text3);font-size:12px;">→ ' + routeLabel + '</span></div>'
-        + '<div style="color:var(--text3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + stores + '</div>'
-        + '</div></div>'
-        + '<span style="font-family:var(--mono);text-align:right;white-space:nowrap;">' + truckMi + ' mi</span>'
-        + '<span style="font-family:var(--mono);text-align:right;white-space:nowrap;color:var(--green);">' + Math.round(coveredSysMi) + ' mi</span>'
-        + '<span style="font-family:var(--mono);text-align:right;white-space:nowrap;font-weight:700;color:' + diffColor + '">' + diffStr + '</span>'
-        + '</div>';
-    });
+    var rightRows = SYS_ROUTES.map(function(sr, i) {
+      var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
+      var stores = sr.stops.map(function(s){ return s.store; }).join(' + ');
+      var mi = sysRouteMiles[sr.num];
+      var matched = !!sysToUserTruck[sr.num];
+      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);font-size:13px;">'
+        + '<span style="width:8px;height:8px;border-radius:50%;background:' + col + ';flex-shrink:0"></span>'
+        + '<div><div style="font-weight:600;color:var(--text);">Rt.' + sr.num
+          + ' <span style="font-family:var(--mono);font-weight:400;color:var(--text3);">' + mi + ' mi</span>'
+          + (matched ? ' <span style="font-size:11px;color:var(--green);">✓</span>' : ' <span style="font-size:11px;color:#fca5a5;">✗</span>') + '</div>'
+        + '<div style="font-size:12px;color:var(--text3);">' + stores + '</div></div></div>';
+    }).join('');
 
     html += '<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
-      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:6px;">📐 Miles Reconciliation</div>'
-      + reconHtml
-      + '<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:2px solid var(--border2);margin-top:6px;font-weight:700;">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:8px;">📐 Miles Reconciliation</div>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+      + '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding-bottom:4px;">Your Routes — ' + r.yourMiles + ' mi</div>' + leftRows + '</div>'
+      + '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding-bottom:4px;">System Routes — ' + r.optimalMiles + ' mi</div>' + rightRows + '</div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;padding:8px 0 0;border-top:2px solid var(--border2);margin-top:8px;font-weight:700;">'
       + '<span>Total gap vs optimal</span>'
       + '<span style="font-family:var(--mono);color:' + (totalGap > 0 ? '#fca5a5' : totalGap < 0 ? 'var(--green)' : 'var(--text3)') + '">'
-      + (totalGap > 0 ? '+' : '') + totalGap + ' mi (your ' + r.yourMiles + ' vs optimal ' + r.optimalMiles + ')</span>'
+      + (totalGap > 0 ? '+' : '') + totalGap + ' mi</span>'
       + '</div></div>';
   }
 
@@ -2295,104 +2369,56 @@ function buildAnalysis(r) {
   var mPct = r.sb.routematch ? (r.sb.routematch.matchPct || 0) : 0;
   var notes = [];
   if (eff !== null) {
-    if (eff >= 95) notes.push('Miles efficiency: ' + eff + '% \u2014 outstanding. Your groupings are nearly optimal.');
-    else if (eff >= 80) notes.push('Miles efficiency: ' + eff + '%. Close to optimal \u2014 a few stores add extra distance to their truck.');
-    else notes.push('Miles efficiency: ' + eff + '%. Significant detours \u2014 look for stores assigned far from their cluster.');
+    if (eff > 100) {
+      notes.push('Miles efficiency: ' + eff + '% — you drove fewer miles than the reference solution. Check the window compliance score to ensure your groupings can be served within delivery windows.');
+    } else if (eff >= 95) {
+      notes.push('Miles efficiency: ' + eff + '% — very close to optimal.');
+    } else if (eff >= 80) {
+      notes.push('Miles efficiency: ' + eff + '%. A few groupings added extra distance.');
+    } else {
+      notes.push('Miles efficiency: ' + eff + '%. Look for stores that ended up far from their natural delivery cluster.');
+    }
   }
-  if (mPct === 100) {
-    notes.push('Route match: 100% \u2014 every truck has exactly the right store grouping.');
-  } else {
-    var unmatchedTrucks = activeTrucks.filter(function(t){ return !findMatchingGroup(t); });
-    var wrongStores = Array.from(new Set(unmatchedTrucks.reduce(function(a,t){
-      return a.concat(t.orders.map(function(o){ return o.storeName; }));
-    }, [])));
-    notes.push('Route match: ' + mPct + '%. Stores in wrong groupings: ' + (wrongStores.join(', ') || 'none') + '.');
+  if (r.sb.window) {
+    const wp = r.sb.window.windowPct;
+    const viols = r.sb.window.windowViolations;
+    if (viols === 0) {
+      notes.push('Window compliance: 100% — all trucks can serve their stops within delivery windows.');
+    } else {
+      notes.push('Window compliance: ' + wp + '%. ' + viols + ' store' + (viols!==1?'s':'') + ' cannot be reached within their delivery window given the other stops on that truck. Check the 🔴 trucks and consider splitting those stores onto separate trucks.');
+    }
   }
-  if (r.numTrucks > SYS_ROUTES.length)
-    notes.push('You used ' + (r.numTrucks - SYS_ROUTES.length) + ' extra truck(s). Every extra truck adds at least one full Sacramento departure leg.');
+  if (r.sb.routematch) {
+    const mp = r.sb.routematch.matchPct;
+    if (mp < 100) {
+      var unmatchedTrucks = activeTrucks.filter(function(t){ return !findMatchingGroup(t); });
+      var diffStores = Array.from(new Set(unmatchedTrucks.reduce(function(a,t){
+        return a.concat(t.orders.map(function(o){ return o.storeName; }));
+      }, [])));
+      notes.push('Your groupings differ from the system on: ' + (diffStores.join(', ') || 'none') + '. The system\'s approach is shown in the comparison below — both may be valid if windows are met.');
+    }
+  }
+  if (r.numTrucks > SYS_ROUTES.length) {
+    notes.push('You used ' + (r.numTrucks - SYS_ROUTES.length) + ' more truck' + (r.numTrucks - SYS_ROUTES.length !== 1 ? 's' : '') + ' than the reference solution.');
+  }
   aiBody.textContent = notes.join('\n\n');
 }
 
 
-let _userFinalGeos = {};
+let resultsMapUser = null, resultsMapSystem = null;
 
-function initResultsMap(finalGeos) {
-  _userFinalGeos = finalGeos;
-  resultsViewMode = 'user';
-  document.getElementById('toggle-user').classList.add('active');
-  document.getElementById('toggle-system').classList.remove('active');
-  _drawResultsMap(finalGeos, trucks.filter(t=>t.orders.length>0));
+function initResultsMap(finalGeos, sysGeoMap) {
+  _drawUserMap(finalGeos, trucks.filter(t=>t.orders.length>0));
+  _drawSystemMap(sysGeoMap);
 }
 
-async function switchResultsView(mode) {
-  resultsViewMode = mode;
-  document.getElementById('toggle-user').classList.toggle('active', mode==='user');
-  document.getElementById('toggle-system').classList.toggle('active', mode==='system');
-
-  if (mode === 'user') {
-    _drawResultsMap(_userFinalGeos, trucks.filter(t=>t.orders.length>0));
-  } else {
-    // Draw system routes
-    if (resultsMap) { resultsMap.remove(); resultsMap = null; }
-    resultsMap = L.map('results-map', { center:[38.05,-122.2], zoom:8, scrollWheelZoom:false, zoomControl:true });
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-      attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
-    }).addTo(resultsMap);
-    L.marker([DEPOT.lat,DEPOT.lng],{ icon:L.divIcon({ html:'<div style="background:#1e293b;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px;border:2px solid rgba(255,255,255,0.15)">🏭</div>', iconSize:[28,28], iconAnchor:[14,14], className:'' }) }).addTo(resultsMap)
-      .bindTooltip('DC · Sacramento',{direction:'bottom',offset:[0,14],className:'store-tt'});
-    var bounds = [[DEPOT.lat,DEPOT.lng]];
-    var localMap = resultsMap;
-    for (var i=0; i<SYS_ROUTES.length; i++) {
-      var sr = SYS_ROUTES[i];
-      var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-      var storeIds = sr.stops.map(function(s){return STOP_NAME_TO_ID[s.store];}).filter(Boolean);
-      var ordered = optimizeStopOrder(storeIds);
-      var lls = [[DEPOT.lat,DEPOT.lng]].concat(ordered.map(function(id){return [STORE_COORDS[id].lat,STORE_COORDS[id].lng];}));
-      var stopAbbrevs = ordered.map(function(id){return STORE_ABBR[id];}).join('→');
-      var labelTxt = 'Rt.' + sr.num + '·' + stopAbbrevs;
-      var mkLabel = function(c,txt){ return '<div style="background:'+c+';color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.7);border:1.5px solid rgba(255,255,255,0.25)">'+txt+'</div>'; };
-      var routeLayer = L.polyline(lls,{color:col,weight:4,opacity:0.72,dashArray:'7,4'}).addTo(localMap);
-      ordered.forEach(function(id) {
-        var c = STORE_COORDS[id];
-        L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:500}).addTo(localMap)
-          .bindTooltip(STORE_NAMES[id],{permanent:true,direction:'top',offset:[0,-16],className:'store-tt'});
-        bounds.push([c.lat,c.lng]);
-      });
-      var mid0 = routeLabelPoint(lls, 0.38);
-      var labelMarker = L.marker(mid0,{ icon:L.divIcon({ html:mkLabel(col,labelTxt), className:'truck-route-label', iconSize:[0,0], iconAnchor:[0,10] }), interactive:false, zIndexOffset:700 }).addTo(localMap);
-      (function(cLls,cCol,cLayer,cLabel,cLabelTxt,cMkLabel) {
-        fetchRouteGeo(cLls).then(function(geo) {
-          if (!geo || localMap !== resultsMap) return;
-          localMap.removeLayer(cLayer);
-          L.geoJSON(geo,{style:function(){return {color:cCol,weight:4.5,opacity:0.9,lineJoin:'round',lineCap:'round'};}}).addTo(localMap);
-          if (geo.coordinates && geo.coordinates.length > 1) {
-            var roadPts = geo.coordinates.map(function(c){return [c[1],c[0]];});
-            var midR = routeLabelPoint(roadPts, 0.5);
-            localMap.removeLayer(cLabel);
-            L.marker(midR,{ icon:L.divIcon({ html:cMkLabel(cCol,cLabelTxt), className:'truck-route-label', iconSize:[0,0], iconAnchor:[0,10] }), interactive:false, zIndexOffset:700 }).addTo(localMap);
-          }
-        }).catch(function(){});
-      })(lls, col, routeLayer, labelMarker, labelTxt, mkLabel);
-    }
-    // Add system route legend
-    var sysLegendEntries = SYS_ROUTES.map(function(sr, i) {
-      var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-      var storeAbbrs = sr.stops.map(function(s){ return STORE_ABBR[STOP_NAME_TO_ID[s.store]] || s.store.substring(0,3); }).join('→');
-      return {color: col, label: 'Rt.' + sr.num + ': ' + storeAbbrs};
-    });
-    addResultsLegend(localMap, sysLegendEntries, 'System Routes');
-    try { resultsMap.fitBounds(bounds,{padding:[36,36]}); } catch(e) {}
-  }
-}
-
-function _drawResultsMap(finalGeos, activeTrucks) {
-  if (resultsMap) { resultsMap.remove(); resultsMap = null; }
-  resultsMap = L.map('results-map', { center:[38.05,-122.2], zoom:8, scrollWheelZoom:false, zoomControl:true });
+function _drawUserMap(finalGeos, activeTrucks) {
+  if (resultsMapUser) { resultsMapUser.remove(); resultsMapUser = null; }
+  resultsMapUser = L.map('results-map-user', { center:[38.05,-122.2], zoom:8, scrollWheelZoom:false, zoomControl:true });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
     attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
-  }).addTo(resultsMap);
-  L.marker([DEPOT.lat,DEPOT.lng],{ icon:L.divIcon({ html:'<div style="background:#1e293b;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:17px;border:2px solid rgba(255,255,255,0.15)">🏭</div>', iconSize:[28,28], iconAnchor:[14,14], className:'' }) }).addTo(resultsMap)
-    .bindTooltip('DC · Sacramento',{direction:'bottom',offset:[0,14],className:'store-tt'});
+  }).addTo(resultsMapUser);
+  L.marker([DEPOT.lat,DEPOT.lng],{ icon:L.divIcon({ html:'<div style="background:#1e293b;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(255,255,255,0.15)">🏭</div>', iconSize:[22,22], iconAnchor:[11,11], className:'' }) }).addTo(resultsMapUser);
   var storeColors = {};
   activeTrucks.forEach(function(t,i) {
     var c = TRUCK_COLORS[i%TRUCK_COLORS.length];
@@ -2401,29 +2427,87 @@ function _drawResultsMap(finalGeos, activeTrucks) {
   Object.entries(STORE_COORDS).forEach(function(entry) {
     var id = entry[0], c = entry[1];
     var col = storeColors[id] || '#3a4a5c';
-    L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:storeColors[id]?500:200}).addTo(resultsMap)
-      .bindTooltip(STORE_NAMES[id],{permanent:true,direction:'top',offset:[0,-16],className:'store-tt'});
+    L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:storeColors[id]?500:200}).addTo(resultsMapUser)
+      .bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});
   });
   var bounds = [[DEPOT.lat,DEPOT.lng]];
   Object.values(finalGeos).forEach(function(item) {
-    var geo=item.geo, lls=item.lls, color=item.color, name=item.name;
-    if (geo) L.geoJSON(geo,{style:function(){return {color:color,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMap);
-    else L.polyline(lls,{color:color,weight:3.5,opacity:0.8,dashArray:'8,5'}).addTo(resultsMap);
-    lls.forEach(function(ll){ bounds.push(ll); });
-    var pts = (geo && geo.coordinates) ? geo.coordinates.map(function(c){return [c[1],c[0]];}) : lls;
-    var mid = routeLabelPoint(pts, 0.38);
-    L.marker(mid,{ icon:L.divIcon({ html:'<div style="background:'+color+';color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.7);border:1.5px solid rgba(255,255,255,0.25)">'+name+'</div>', className:'truck-route-label', iconSize:[0,0], iconAnchor:[0,10] }), interactive:false, zIndexOffset:700 }).addTo(resultsMap);
+    var geo=item.geo, lls=item.lls, color=item.color;
+    // Always draw fallback polyline first
+    var fallback = L.polyline(lls,{color:color,weight:3,opacity:0.6,dashArray:'6,4'}).addTo(resultsMapUser);
+    if (geo) {
+      fallback.remove();
+      L.geoJSON(geo,{style:function(){return {color:color,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapUser);
+    } else if (lls) {
+      // Try fetching route geo with retry
+      (function(cLls, cCol, cFallback) {
+        var attempt = function(tries) {
+          fetchRouteGeo(cLls).then(function(g) {
+            if (!g || resultsMapUser === null) return;
+            cFallback.remove();
+            L.geoJSON(g,{style:function(){return {color:cCol,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapUser);
+          }).catch(function() {
+            if (tries > 1) setTimeout(function(){ attempt(tries-1); }, 2000);
+          });
+        };
+        attempt(3);
+      })(lls, color, fallback);
+    }
+    if (lls) lls.forEach(function(ll){ bounds.push(ll); });
   });
-  // Add legend
-  var legendEntries = activeTrucks.map(function(t, i) {
-    var color = TRUCK_COLORS[i % TRUCK_COLORS.length];
-    var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){ return STORE_ABBR[id]; }).join('→');
-    return {color: color, label: t.name + ': ' + stores};
-  });
-  addResultsLegend(resultsMap, legendEntries, 'Your Routes');
-  try { resultsMap.fitBounds(bounds,{padding:[36,36]}); } catch(e) {}
+  // External legend
+  var legendEl = document.getElementById('legend-user');
+  if (legendEl) {
+    legendEl.innerHTML = activeTrucks.map(function(t,i){
+      var col = TRUCK_COLORS[i%TRUCK_COLORS.length];
+      var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){return STORE_ABBR[id];}).join('→');
+      return '<span style="display:flex;align-items:center;gap:4px;color:var(--text2);">'
+        +'<span style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>'
+        +t.name+': '+stores+'</span>';
+    }).join('');
+  }
+  try { resultsMapUser.fitBounds(bounds,{padding:[28,28]}); } catch(e) {}
 }
 
+function _drawSystemMap(sysGeoMap) {
+  if (resultsMapSystem) { resultsMapSystem.remove(); resultsMapSystem = null; }
+  resultsMapSystem = L.map('results-map-system', { center:[38.05,-122.2], zoom:8, scrollWheelZoom:false, zoomControl:true });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+    attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
+  }).addTo(resultsMapSystem);
+  L.marker([DEPOT.lat,DEPOT.lng],{ icon:L.divIcon({ html:'<div style="background:#1e293b;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(255,255,255,0.15)">🏭</div>', iconSize:[22,22], iconAnchor:[11,11], className:'' }) }).addTo(resultsMapSystem);
+  var bounds = [[DEPOT.lat,DEPOT.lng]];
+  SYS_ROUTES.forEach(function(sr, i) {
+    var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
+    var storeIds = sr.stops.map(function(s){return STOP_NAME_TO_ID[s.store];}).filter(Boolean);
+    var ordered = optimizeStopOrder(storeIds);
+    var lls = [[DEPOT.lat,DEPOT.lng]].concat(ordered.map(function(id){return [STORE_COORDS[id].lat,STORE_COORDS[id].lng];}));
+    ordered.forEach(function(id) {
+      var c = STORE_COORDS[id];
+      L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:500}).addTo(resultsMapSystem)
+        .bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});
+      bounds.push([c.lat,c.lng]);
+    });
+    var item = sysGeoMap && sysGeoMap[sr.num];
+    if (item && item.geo) {
+      L.geoJSON(item.geo,{style:function(){return {color:col,weight:4,opacity:0.9,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapSystem);
+    } else {
+      L.polyline(lls,{color:col,weight:3,opacity:0.7,dashArray:'7,4'}).addTo(resultsMapSystem);
+    }
+  });
+  // External legend
+  var legendEl = document.getElementById('legend-system');
+  if (legendEl) {
+    legendEl.innerHTML = SYS_ROUTES.map(function(sr, i){
+      var col = TRUCK_COLORS[i%TRUCK_COLORS.length];
+      var abbrs = sr.stops.map(function(s){return STORE_ABBR[STOP_NAME_TO_ID[s.store]]||s.store.substring(0,3);}).join('→');
+      return '<span style="display:flex;align-items:center;gap:4px;color:var(--text2);">'
+        +'<span style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>'
+        +'Rt.'+sr.num+': '+abbrs+'</span>';
+    }).join('');
+  }
+  try { resultsMapSystem.fitBounds(bounds,{padding:[28,28]}); } catch(e) {}
+}
 // ═══════════════════════════════════════════════════════════════
 // CONTEXT MENU
 // ═══════════════════════════════════════════════════════════════
