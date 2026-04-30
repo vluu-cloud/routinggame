@@ -1879,7 +1879,7 @@ function renderLeaderboard(entries) {
           <span class="lb-name">${e.name}</span>
           <span class="lb-grade" style="color:${gc[e.grade]}">${e.grade}</span>
         </div>
-        <div class="lb-meta">${e.trucks} trucks · ${e.miles?e.miles.toLocaleString()+' mi · ':''} ${e.violations} violation${e.violations!==1?'s':''} · ${e.time}</div>
+        <div class="lb-meta">${e.trucks} trucks · ${e.miles?e.miles.toLocaleString()+' mi · ':''} ${e.violations != null ? e.violations + " violation" + (e.violations!==1?"s":"") : ""} · ${e.time}</div>
         ${e.routes?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''}
         ${routesHtml}
       </div>
@@ -1917,17 +1917,28 @@ async function showLeaderboard() {
 
   try {
     const resp = await fetch(SHEETS_URL + '?read=1', { cache: 'no-store' });
-    if (resp.ok) {
-      const remote = await resp.json();
-      // Merge remote entries with any local-session entries not yet in remote
-      const remoteIds = new Set(remote.map(e => e.timestamp));
-      const localOnly = leaderboard.filter(e => !remoteIds.has(e.timestamp));
-      const merged = [...remote, ...localOnly].sort((a,b) => b.score - a.score);
-      renderLeaderboard(merged);
+    const text = await resp.text();
+    let remote;
+    try {
+      remote = JSON.parse(text);
+    } catch(parseErr) {
+      list.innerHTML = '<div class="lb-empty">⚠️ Leaderboard unavailable — Apps Script needs to be redeployed with the read handler. Raw response: <code style="font-size:11px;word-break:break-all">' + text.slice(0, 120) + '</code></div>';
+      console.error('Sheets JSON parse failed. Raw:', text);
       return;
     }
-  } catch(e) {
-    console.log('Sheets read failed, falling back to local:', e);
+    if (!Array.isArray(remote)) {
+      list.innerHTML = '<div class="lb-empty">⚠️ Unexpected response from Sheets — expected array, got: <code style="font-size:11px">' + typeof remote + '</code></div>';
+      return;
+    }
+    // Merge remote with any local-session entries not yet in remote
+    const remoteTs = new Set(remote.map(e => String(e.timestamp)));
+    const localOnly = leaderboard.filter(e => !remoteTs.has(String(e.timestamp)));
+    const merged = [...remote, ...localOnly].sort((a,b) => b.score - a.score);
+    renderLeaderboard(merged);
+    return;
+  } catch(err) {
+    console.error('Sheets fetch error:', err);
+    list.innerHTML = '<div class="lb-empty">⚠️ Could not reach leaderboard server. Showing local scores only.</div>';
   }
   // Fallback: local session data
   renderLeaderboard();
