@@ -1710,7 +1710,7 @@ function renderResults(r, finalGeos) {
 // ═══════════════════════════════════════════════════════════════
 // 11. LEADERBOARD
 // ═══════════════════════════════════════════════════════════════
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxysQiZ5oUaedqlXerMLsg7fvcGFNoxEpG0AeZSyK1nY8nLxolPkExvmcz9JYVU8D6C/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwoxVZ7l1B7HwEZ_9yhzTW6bYkh6on3LdZAW7MR9ByBEjBMX5bDKuvR2HsBELLwujMN/exec';
 
 function saveToLeaderboard(r) {
   const routeDetail = trucks.filter(t=>t.orders.length>0).map(t => {
@@ -1746,11 +1746,7 @@ function saveToLeaderboard(r) {
   });
   const sheetUrl = SHEETS_URL + '?' + params.toString();
   console.log('Sending to Sheets:', sheetUrl);
-  // Script tag injection is the most reliable cross-origin fire-and-forget
-  const s = document.createElement('script');
-  s.src = sheetUrl;
-  document.head.appendChild(s);
-  setTimeout(() => { try { document.head.removeChild(s); } catch(e) {} }, 5000);
+  fetch(sheetUrl, { mode: 'no-cors' }).catch(err => console.log('Sheets error:', err));
 }
 
 function renderLeaderboard() {
