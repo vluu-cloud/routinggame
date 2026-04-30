@@ -623,16 +623,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           15/25 → <strong style="color:var(--red);">180 pts</strong>
         </div>
       </div></div>
-      <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery window compliance</strong><span class="rule-pts">150 pts</span> — Every store has a delivery window (shown on each order). Your truck must be able to reach all its stops within those windows.
+      <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery window compliance</strong><span class="rule-pts">150 pts</span> — Every store has a delivery window shown on its order chip. All stops on a truck must have compatible windows — your driver needs to reach each store while it's open.
         <div style="margin-top:8px;background:rgba(240,166,35,0.06);border:1px solid rgba(240,166,35,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
-          <strong style="color:var(--text);">Formula:</strong> 150 × (reachable stores ÷ total stores)<br>
-          <div style="margin-top:6px;display:flex;flex-direction:column;gap:4px;">
-            <span><span style="color:#fca5a5;font-weight:700;">4–8am</span> — tight early window</span>
-            <span><span style="color:#fcd34d;font-weight:700;">5–9am / 6–10am</span> — moderate window</span>
-            <span><span style="color:#86efac;font-weight:700;">7–11am</span> — flexible window</span>
-          </div>
+          <strong style="color:var(--text);">Formula:</strong> 150 × (stores reached within window ÷ total stores)<br>
           <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px;font-size:12px;color:var(--text3);">
-            💡 <strong style="color:var(--text);">Tip:</strong> Windows help explain why certain stores are paired together — a tight-window store needs to be paired with stores reachable before its window closes.
+            💡 <strong style="color:var(--text);">Tip:</strong> Window compatibility is the main reason certain stores are paired together. If two stores on the same truck have windows that don't overlap enough to serve both, you'll lose points.
           </div>
         </div>
       </div></div>
@@ -997,7 +992,7 @@ let trucks = [], poolOrders = [];
 let poolSearch = '', poolSort = 'name-asc', poolFilters = new Set();
 let truckCounter = 0, draggedOrder = null, dragSource = null;
 let timerInterval = null, startTime = null, elapsedSeconds = 0;
-let leaderboard = JSON.parse(sessionStorage.getItem('routing_lb') || '[]');
+let leaderboard = []; // populated from Google Sheets on demand
 let fromScreen = 'intro', playerName = '';
 const routeTimers = {};
 
@@ -1810,143 +1805,188 @@ function renderResults(r, finalGeos) {
 
 
 // ═══════════════════════════════════════════════════════════════
-// 11. LEADERBOARD
+// 11. LEADERBOARD — Google Sheets backend
 // ═══════════════════════════════════════════════════════════════
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwoxVZ7l1B7HwEZ_9yhzTW6bYkh6on3LdZAW7MR9ByBEjBMX5bDKuvR2HsBELLwujMN/exec';
 
 function saveToLeaderboard(r) {
-  const routeDetail = trucks.filter(t=>t.orders.length>0).map(t => {
-    const stores = optimizeStopOrder(getUniqueStores(t.orders));
-    const storeNames = stores.map(id => STORE_NAMES[id] || id);
-    const totW = t.orders.reduce((s,o)=>s+o.weight,0);
-    return { name: t.name, stops: storeNames, miles: getTruckMiles(t), weight: Math.round(totW) };
+  // Build route summary string: "Truck 1: Brentwood→Buchanan | Truck 2: ..."
+  var activeTk = trucks.filter(function(t){ return t.orders.length > 0; });
+  var routeDetail = activeTk.map(function(t) {
+    var stores = optimizeStopOrder(getUniqueStores(t.orders));
+    var storeNames = stores.map(function(id){ return STORE_NAMES[id] || id; });
+    return { name: t.name, stops: storeNames, miles: getTruckMiles(t), weight: Math.round(t.orders.reduce(function(s,o){return s+o.weight;},0)) };
   });
-  const entry = {
-    name: r.playerName, score: r.totalScore, grade: r.grade,
+  var routeSummary = routeDetail.map(function(t){ return t.name + ': ' + t.stops.join('\u2192') + ' (' + t.miles + 'mi, ' + t.weight.toLocaleString() + 'lbs)'; }).join(' | ');
+  var matchPct = (r.sb && r.sb.routematch) ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
+
+  // Save locally (session fallback)
+  var entry = {
+    player: r.playerName, score: r.totalScore, grade: r.grade,
     trucks: r.numTrucks, miles: r.yourMiles,
     violations: r.violations.length, time: formatTime(r.elapsedSeconds),
-    timestamp: r.timestamp, routes: routeDetail
+    timestamp: r.timestamp, routeMatch: matchPct, routes: routeSummary,
+    routeDetail: routeDetail
   };
   leaderboard.push(entry);
-  leaderboard.sort((a,b)=>b.score-a.score);
-  sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
+  leaderboard.sort(function(a,b){ return b.score - a.score; });
 
-  // Sync to Google Sheets — only if this is a real scored submission
-  if (!r.playerName || !r.totalScore) return;
-  const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
-  const matchPct = r.sb && r.sb.routematch
-    ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
-  const params = new URLSearchParams({
-    action: 'write',
-    playerName: r.playerName,
+  // POST to Google Sheets
+  var payload = {
+    timestamp: new Date(r.timestamp).toISOString(),
+    player: r.playerName,
     score: r.totalScore,
     grade: r.grade,
-    miles: r.yourMiles,
+    miles: r.yourMiles || 0,
     trucks: r.numTrucks,
     routeMatch: matchPct,
     time: formatTime(r.elapsedSeconds),
-    routes: routeSummary,
-    timestamp: new Date(r.timestamp).toISOString()
-  });
-  const sheetUrl = SHEETS_URL + '?' + params.toString();
-  console.log('Sending to Sheets:', sheetUrl);
-  fetch(sheetUrl, { mode: 'no-cors' }).catch(err => console.log('Sheets error:', err));
+    routes: routeSummary
+  };
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(payload)
+  }).then(function(res){ return res.json(); })
+    .then(function(data){ console.log('Sheet write:', data); })
+    .catch(function(err){ console.warn('Sheet write failed:', err); });
 }
 
-function renderLeaderboard() {
-  const list = document.getElementById('lb-list');
-  if (!leaderboard.length) { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; return; }
-  const gc = {S:'#fcd34d',A:'#6ee7b7',B:'#93c5fd',C:'#c4b5fd',D:'#fca5a5'};
-  list.innerHTML = leaderboard.map((e,i) => {
-    const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-    const uid = 'lb-routes-'+i;
-    let routesHtml = '';
-    if (e.routes && e.routes.length) {
-      routesHtml = `<div class="lb-routes" id="${uid}" style="display:none">` +
-        e.routes.map((r,ri) => {
-          const col = TRUCK_COLORS[ri % TRUCK_COLORS.length];
-          return `<div class="lb-route-row">
-            <div class="lb-route-name" style="border-left:3px solid ${col};padding-left:6px;">${r.name}</div>
-            <div class="lb-route-stops">${r.stops.join(' → ')}</div>
-            <div class="lb-route-stats">${r.miles} mi · ${r.weight.toLocaleString()} lbs</div>
-          </div>`;
-        }).join('') +
-      '</div>';
+function fetchLeaderboard() {
+  var list = document.getElementById('lb-list');
+  list.innerHTML = '<div class="lb-empty" style="padding:2rem 0;"><div style="font-size:28px;margin-bottom:8px">⏳</div>Loading leaderboard\u2026</div>';
+
+  fetch(SHEETS_URL)
+    .then(function(res){ return res.json(); })
+    .then(function(rows) {
+      if (!Array.isArray(rows) || !rows.length) {
+        // Fall back to local session data
+        if (leaderboard.length) { renderLeaderboard(leaderboard); }
+        else { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; }
+        return;
+      }
+      // Convert sheet rows to leaderboard entries
+      leaderboard = rows.map(function(r) {
+        // Parse route summary back into detail objects for expandable view
+        var routeDetail = [];
+        if (r.routes) {
+          var parts = r.routes.split(' | ');
+          parts.forEach(function(p) {
+            var colonIdx = p.indexOf(':');
+            if (colonIdx < 0) return;
+            var tName = p.substring(0, colonIdx).trim();
+            var rest = p.substring(colonIdx + 1).trim();
+            // Extract parenthetical stats: (54mi, 20,719lbs)
+            var statsMatch = rest.match(/\(([^)]+)\)\s*$/);
+            var miles = 0, weight = 0;
+            if (statsMatch) {
+              var statsParts = statsMatch[1].split(',');
+              statsParts.forEach(function(sp) {
+                sp = sp.trim();
+                if (sp.endsWith('mi')) miles = parseInt(sp) || 0;
+                if (sp.endsWith('lbs')) weight = parseInt(sp.replace(/,/g,'')) || 0;
+              });
+              rest = rest.substring(0, rest.indexOf('(')).trim();
+            }
+            var stops = rest.split('\u2192').map(function(s){ return s.trim(); }).filter(Boolean);
+            routeDetail.push({ name: tName, stops: stops, miles: miles, weight: weight });
+          });
+        }
+        return {
+          timestamp: r.timestamp,
+          player: r.player || 'Anonymous',
+          score: Number(r.score) || 0,
+          grade: r.grade || '',
+          miles: Number(r.miles) || 0,
+          trucks: Number(r.trucks) || 0,
+          routeMatch: r.routeMatch || '',
+          time: r.time || '',
+          routes: r.routes || '',
+          routeDetail: routeDetail,
+          violations: 0 // not stored in sheet
+        };
+      });
+      leaderboard.sort(function(a,b){ return b.score - a.score; });
+      renderLeaderboard(leaderboard);
+    })
+    .catch(function(err) {
+      console.warn('Sheet read failed:', err);
+      // Fall back to session data
+      if (leaderboard.length) { renderLeaderboard(leaderboard); }
+      else { list.innerHTML = '<div class="lb-empty">Could not load leaderboard. Try again later.</div>'; }
+    });
+}
+
+function renderLeaderboard(entries) {
+  var list = document.getElementById('lb-list');
+  if (!entries || !entries.length) { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; return; }
+  var gc = {S:'#fcd34d',A:'#6ee7b7',B:'#93c5fd',C:'#c4b5fd',D:'#fca5a5'};
+  list.innerHTML = entries.map(function(e, i) {
+    var rank = i===0?'\ud83e\udd47':i===1?'\ud83e\udd48':i===2?'\ud83e\udd49':'#'+(i+1);
+    var uid = 'lb-routes-'+i;
+    var rd = e.routeDetail || [];
+
+    var routesHtml = '';
+    if (rd.length) {
+      routesHtml = '<div class="lb-routes" id="' + uid + '" style="display:none">'
+        + rd.map(function(r, ri) {
+            var col = TRUCK_COLORS[ri % TRUCK_COLORS.length];
+            return '<div class="lb-route-row">'
+              + '<div class="lb-route-name" style="border-left:3px solid ' + col + ';padding-left:6px;">' + r.name + '</div>'
+              + '<div class="lb-route-stops">' + r.stops.join(' \u2192 ') + '</div>'
+              + '<div class="lb-route-stats">' + r.miles + ' mi \u00b7 ' + r.weight.toLocaleString() + ' lbs</div>'
+              + '</div>';
+          }).join('')
+        + '</div>';
     }
-    return `<div class="lb-row">
-      <div class="lb-rank">${rank}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="lb-name">${e.name}</span>
-          <span class="lb-grade" style="color:${gc[e.grade]}">${e.grade}</span>
-        </div>
-        <div class="lb-meta">${e.trucks} trucks · ${e.miles?e.miles.toLocaleString()+' mi · ':''} ${e.violations} violation${e.violations!==1?'s':''} · ${e.time}</div>
-        ${e.routes?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''}
-        ${routesHtml}
-      </div>
-      <div class="lb-score">${e.score}</div>
-    </div>`;
+
+    var metaParts = [];
+    if (e.trucks) metaParts.push(e.trucks + ' truck' + (e.trucks !== 1 ? 's' : ''));
+    if (e.miles) metaParts.push(e.miles.toLocaleString() + ' mi');
+    if (e.routeMatch) metaParts.push(e.routeMatch + ' match');
+    if (e.time) metaParts.push(e.time);
+
+    return '<div class="lb-row">'
+      + '<div class="lb-rank">' + rank + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="display:flex;align-items:center;gap:8px;">'
+      + '<span class="lb-name">' + e.player + '</span>'
+      + '<span class="lb-grade" style="color:' + (gc[e.grade] || 'var(--text3)') + '">' + e.grade + '</span>'
+      + '</div>'
+      + '<div class="lb-meta">' + metaParts.join(' \u00b7 ') + '</div>'
+      + (rd.length ? '<button class="lb-expand-btn" onclick="toggleLbRoutes(\'' + uid + '\',this)">\u25b6 View routes</button>' : '')
+      + routesHtml
+      + '</div>'
+      + '<div class="lb-score">' + e.score + '</div>'
+      + '</div>';
   }).join('');
 }
 
 function toggleLbRoutes(uid, btn) {
-  const el = document.getElementById(uid);
+  var el = document.getElementById(uid);
   if (!el) return;
-  const open = el.style.display !== 'none';
+  var open = el.style.display !== 'none';
   el.style.display = open ? 'none' : 'block';
-  btn.textContent = open ? '▶ View routes' : '▼ Hide routes';
+  btn.textContent = open ? '\u25b6 View routes' : '\u25bc Hide routes';
 }
 
 // ═══════════════════════════════════════════════════════════════
 // 12. NAVIGATION & TIMER
 // ═══════════════════════════════════════════════════════════════
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
   document.getElementById(id).classList.add('active');
-  if (id==='screen-results') { document.getElementById('submit-btn').textContent='✅ Submit routes & score'; document.getElementById('submit-btn').disabled=false; }
+  if (id==='screen-results') { document.getElementById('submit-btn').textContent='\u2705 Submit routes & score'; document.getElementById('submit-btn').disabled=false; }
 }
 
 function goBack() { stopTimer(); showScreen('screen-intro'); }
 
 function showLeaderboard() {
-  fromScreen = document.querySelector('.screen.active')?.id || 'intro';
+  fromScreen = document.querySelector('.screen.active');
+  fromScreen = fromScreen ? fromScreen.id : 'intro';
   stopTimer();
   showScreen('screen-leaderboard');
-  // Show local scores immediately while we fetch from Sheets
-  renderLeaderboard();
-  // Fetch live scores from Google Sheets
-  const list = document.getElementById('lb-list');
-  list.innerHTML = '<div class="lb-empty" style="opacity:.6">Loading scores…</div>';
-  fetch(SHEETS_URL + '?action=read')
-    .then(r => r.json())
-    .then(data => {
-      if (!Array.isArray(data) || !data.length) {
-        // Fall back to local session scores
-        renderLeaderboard();
-        return;
-      }
-      // Merge sheet scores with any local session scores, deduplicate by timestamp
-      const sheetEntries = data.map(row => ({
-        name:      row.playerName || row.name || 'Anonymous',
-        score:     Number(row.score) || 0,
-        grade:     row.grade || '—',
-        trucks:    Number(row.trucks) || 0,
-        miles:     Number(row.miles) || 0,
-        violations:Number(row.violations) || 0,
-        time:      row.time || '—',
-        timestamp: row.timestamp || '',
-        routes:    row.routes ? String(row.routes).split(' | ').map(r => ({ name: r.split(':')[0]?.trim(), stops: r.split(':')[1]?.split('→').map(s=>s.trim()) || [] })) : []
-      }));
-      const seen = new Set(leaderboard.map(e => e.timestamp));
-      sheetEntries.forEach(e => { if (!seen.has(e.timestamp)) leaderboard.push(e); });
-      leaderboard.sort((a,b) => b.score - a.score);
-      sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
-      renderLeaderboard();
-    })
-    .catch(() => {
-      // Network error or CORS — just show whatever is in session
-      renderLeaderboard();
-    });
+  fetchLeaderboard();
 }
 
 function startTimer() {
