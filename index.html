@@ -1762,10 +1762,6 @@ function saveToLeaderboard(r) {
     violations: r.violations.length, time: formatTime(r.elapsedSeconds),
     timestamp: r.timestamp, routes: routeDetail
   };
-  leaderboard.push(entry);
-  leaderboard.sort((a,b)=>b.score-a.score);
-  sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
-
   // Sync to Google Sheets via POST with JSON body (matches doPost in Apps Script)
   const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
   const matchPct = r.sb && r.sb.routematch
@@ -1836,15 +1832,18 @@ function renderLeaderboard() {
   const list = document.getElementById('lb-list');
   list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⏳ Loading leaderboard…</div>';
 
-  // Fetch live data from Google Sheets — Sheets is the source of truth
+  // Sheets is the only source of truth — never show local session data
   fetch(SHEETS_URL, { method: 'GET', mode: 'cors' })
     .then(resp => resp.json())
     .then(rows => {
-      _renderLeaderboardRows(Array.isArray(rows) && rows.length ? rows : leaderboard);
+      if (Array.isArray(rows) && rows.length) {
+        _renderLeaderboardRows(rows);
+      } else {
+        list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>';
+      }
     })
     .catch(() => {
-      // Sheets unreachable — fall back to session-only leaderboard
-      _renderLeaderboardRows(leaderboard);
+      list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⚠️ Couldn't load leaderboard — check your connection.</div>';
     });
 }
 
