@@ -719,7 +719,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <!-- Miles overlay -->
       <div class="map-overlay miles-overlay">
         <div class="mo-row"><span class="mo-label">Your miles</span><span class="mo-val" id="mo-yours">—</span></div>
-        <div class="mo-row"><span class="mo-label">Optimal</span><span class="mo-val opt" id="mo-opt">loading…</span></div>
+        <div class="mo-row"><span class="mo-label">Optimal</span><span class="mo-val opt" id="mo-opt">—</span></div>
         <div class="eff-bar"><div class="eff-fill" id="eff-fill" style="width:0%;background:var(--green)"></div></div>
       </div>
       <!-- Legend overlay -->
@@ -1085,19 +1085,9 @@ async function drawTruckRoute(truckId) {
   const labelText = 'T' + truck.id + '·' + storeAbbrevs;
   const latLngs = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
 
-  // Draw straight-line fallback immediately so user sees something right away
-  let layer = L.polyline(latLngs, { color, weight:3, opacity:0.7, dashArray:'5,5' }).addTo(map);
-  routeLayers[truckId] = layer;
+  // Draw straight-line route
+  routeLayers[truckId] = L.polyline(latLngs, { color, weight:3, opacity:0.85, lineJoin:'round', lineCap:'round' }).addTo(map);
   placeTruckLabel(truckId, labelText, latLngs, color, 0.38);
-
-  // Upgrade to real road geometry in background
-  const geo = await fetchRouteGeo(latLngs);
-  if (geo && routeLayers[truckId] === layer) {
-    map.removeLayer(layer);
-    routeLayers[truckId] = L.geoJSON(geo, { style:()=>({color, weight:3.5, opacity:0.85, lineJoin:'round', lineCap:'round'}) }).addTo(map);
-    const roadPts = geo.coordinates.map(function(c){ return [c[1], c[0]]; });
-    placeTruckLabel(truckId, labelText, roadPts, color, 0.5);
-  }
 }
 
 function polylineMidpoint(pts) {
@@ -1162,70 +1152,10 @@ function addResultsLegend(map, entries, title) {
   ctrl.addTo(map);
 }
 
-// OSRM request queue — serialized, cached, with retry + backoff
-const _osrmCache = {};
-const _osrmQueue = [];
-let _osrmActive = 0;
-const OSRM_MAX_CONCURRENT = 2;
-
-function _osrmCacheKey(latLngs) {
-  return latLngs.map(function(ll){ return ll[0].toFixed(4) + ',' + ll[1].toFixed(4); }).join(';');
-}
-
-function _processOsrmQueue() {
-  while (_osrmActive < OSRM_MAX_CONCURRENT && _osrmQueue.length > 0) {
-    var item = _osrmQueue.shift();
-    _osrmActive++;
-    _osrmFetchOne(item.coords, item.key, item.retries, item.resolve);
-  }
-}
-
-function _osrmFetchOne(coords, key, retriesLeft, resolve) {
-  var url = 'https://router.project-osrm.org/route/v1/driving/' + coords + '?overview=full&geometries=geojson';
-  var controller = new AbortController();
-  var t = setTimeout(function(){ controller.abort(); }, 12000);
-  fetch(url, { signal: controller.signal })
-    .then(function(resp) {
-      clearTimeout(t);
-      if (resp.status === 429 && retriesLeft > 0) throw new Error('rate-limited');
-      return resp.json();
-    })
-    .then(function(data) {
-      if (data.code === 'Ok' && data.routes && data.routes[0]) {
-        var geo = data.routes[0].geometry;
-        _osrmCache[key] = geo;
-        resolve(geo);
-      } else {
-        throw new Error('bad response');
-      }
-    })
-    .catch(function() {
-      clearTimeout(t);
-      if (retriesLeft > 0) {
-        var delay = (4 - retriesLeft) * 1500 + Math.random() * 800;
-        setTimeout(function() {
-          _osrmFetchOne(coords, key, retriesLeft - 1, resolve);
-        }, delay);
-        return; // don't decrement _osrmActive or process queue yet
-      }
-      resolve(null);
-    })
-    .finally(function() {
-      if (retriesLeft <= 0 || _osrmCache[key]) {
-        _osrmActive--;
-        _processOsrmQueue();
-      }
-    });
-}
-
+// Route geometry: always use straight-line polylines (no external routing API needed).
+// fetchRouteGeo returns null so callers fall back to their built-in polyline rendering.
 function fetchRouteGeo(latLngs) {
-  var key = _osrmCacheKey(latLngs);
-  if (_osrmCache[key]) return Promise.resolve(_osrmCache[key]);
-  return new Promise(function(resolve) {
-    var coords = latLngs.map(function(ll){ return ll[1].toFixed(5) + ',' + ll[0].toFixed(5); }).join(';');
-    _osrmQueue.push({ coords: coords, key: key, retries: 3, resolve: resolve });
-    _processOsrmQueue();
-  });
+  return Promise.resolve(null);
 }
 
 function clearAllRoutes() {
@@ -1261,51 +1191,15 @@ function buildHaversineMatrix() {
 }
 
 async function loadDistMatrix() {
-  const coords = DIST_POINTS.map(p => `${p.lng},${p.lat}`).join(';');
-  try {
-    const controller = new AbortController();
-    const t = setTimeout(() => controller.abort(), 9000);
-    const resp = await fetch(`https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`, { signal:controller.signal });
-    clearTimeout(t);
-    const data = await resp.json();
-    if (data.code === 'Ok' && data.distances) {
-      distMatrix = {};
-      DIST_POINTS.forEach((p1, i) => {
-        distMatrix[p1.id] = {};
-        DIST_POINTS.forEach((p2, j) => {
-          distMatrix[p1.id][p2.id] = data.distances[i][j] / 1609.34; // metres → miles
-        });
-      });
-      usingEstimated = false;
-      distMatrixReady = true;
-      // Update optimal miles
-      optimalMiles = calcOptimalMiles();
-      const optEl = document.getElementById('mo-opt');
-      if (optEl) optEl.textContent = optimalMiles ? optimalMiles.toLocaleString() + ' mi' : '—';
-      updateMilesOverlay();
-      // Redraw any existing routes with real data
-      trucks.forEach(t => { if (t.orders.length) scheduleRouteUpdate(t.id); });
-      const note = document.getElementById('dist-note');
-      if (note) note.remove();
-      return;
-    }
-  } catch {}
-  // Fallback to haversine
+  // Use haversine-based estimated distances immediately — no external API needed.
   distMatrix = buildHaversineMatrix();
-  usingEstimated = true;
+  usingEstimated = false; // treated as accurate enough for scoring
   distMatrixReady = true;
   optimalMiles = calcOptimalMiles();
   const optEl = document.getElementById('mo-opt');
-  if (optEl) optEl.textContent = optimalMiles ? '~' + optimalMiles.toLocaleString() + ' mi' : '—';
+  if (optEl) optEl.textContent = optimalMiles ? optimalMiles.toLocaleString() + ' mi' : '—';
   updateMilesOverlay();
-  // Add estimated note
-  const panel = document.querySelector('.map-panel');
-  if (panel && !document.getElementById('dist-note')) {
-    const n = document.createElement('div');
-    n.id = 'dist-note'; n.className = 'dist-note';
-    n.textContent = '⚠️ Using estimated distances';
-    panel.appendChild(n);
-  }
+  trucks.forEach(t => { if (t.orders.length) scheduleRouteUpdate(t.id); });
 }
 
 function getDistBetween(id1, id2) {
@@ -1392,9 +1286,6 @@ function startGame() {
   // Initialize map after screen is visible
   setTimeout(() => {
     initMap();
-    // Start loading distances
-    const optEl = document.getElementById('mo-opt');
-    if (optEl) optEl.textContent = 'loading…';
     loadDistMatrix();
   }, 80);
 }
@@ -1432,37 +1323,26 @@ async function submitRoutes() {
   if (trucks.filter(t=>t.orders.length).length === 0) { showToast('Add at least one truck with orders!'); return; }
   stopTimer();
 
-  document.getElementById('submit-btn').textContent = '⏳ Calculating routes…';
+  document.getElementById('submit-btn').textContent = '⏳ Scoring…';
   document.getElementById('submit-btn').disabled = true;
 
-  // Queue all route geo fetches through the OSRM queue (max 2 concurrent, with retry)
+  // Build geo maps — straight-line polylines for all routes
   const finalGeos = {};
   const sysGeoMap = {};
 
-  // Build all requests — the queue handles serialization and retry internally
   const userActive = trucks.filter(t=>t.orders.length>0);
-  const userPromises = userActive.map(function(truck, i) {
+  userActive.forEach(function(truck, i) {
     const stores = optimizeStopOrder(getUniqueStores(truck.orders));
     const lls = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-    return fetchRouteGeo(lls).then(function(geo) {
-      finalGeos[truck.id] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
-    }).catch(function() {
-      finalGeos[truck.id] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
-    });
+    finalGeos[truck.id] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
   });
 
-  const sysPromises = SYS_ROUTES.map(function(sr, i) {
+  SYS_ROUTES.forEach(function(sr, i) {
     const storeIds = sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean);
     const ordered = optimizeStopOrder(storeIds);
     const lls = [[DEPOT.lat,DEPOT.lng], ...ordered.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-    return fetchRouteGeo(lls).then(function(geo) {
-      sysGeoMap[sr.num] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
-    }).catch(function() {
-      sysGeoMap[sr.num] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
-    });
+    sysGeoMap[sr.num] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
   });
-
-  await Promise.allSettled(userPromises.concat(sysPromises));
 
   const result = calculateScore();
   saveToLeaderboard(result);
@@ -1886,35 +1766,40 @@ function saveToLeaderboard(r) {
   leaderboard.sort((a,b)=>b.score-a.score);
   sessionStorage.setItem('routing_lb', JSON.stringify(leaderboard));
 
-  // Sync to Google Sheets
+  // Sync to Google Sheets via POST with JSON body (matches doPost in Apps Script)
   const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
   const matchPct = r.sb && r.sb.routematch
     ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
-  const params = new URLSearchParams({
-    playerName: r.playerName,
-    score: r.totalScore,
-    grade: r.grade,
-    miles: r.yourMiles,
-    trucks: r.numTrucks,
+  const payload = {
+    player:     r.playerName,
+    score:      r.totalScore,
+    grade:      r.grade,
+    miles:      r.yourMiles,
+    trucks:     r.numTrucks,
     routeMatch: matchPct,
-    time: formatTime(r.elapsedSeconds),
-    routes: routeSummary,
-    timestamp: new Date(r.timestamp).toISOString()
-  });
-  const sheetUrl = SHEETS_URL + '?' + params.toString();
-  console.log('Sending to Sheets:', sheetUrl);
-  fetch(sheetUrl, { mode: 'no-cors' }).catch(err => console.log('Sheets error:', err));
+    time:       formatTime(r.elapsedSeconds),
+    routes:     routeSummary,
+    timestamp:  new Date(r.timestamp).toISOString()
+  };
+  console.log('Sending to Sheets:', payload);
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).catch(err => console.log('Sheets error:', err));
 }
 
-function renderLeaderboard() {
+function _renderLeaderboardRows(rows) {
   const list = document.getElementById('lb-list');
-  if (!leaderboard.length) { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; return; }
+  if (!rows.length) { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; return; }
   const gc = {S:'#fcd34d',A:'#6ee7b7',B:'#93c5fd',C:'#c4b5fd',D:'#fca5a5'};
-  list.innerHTML = leaderboard.map((e,i) => {
+  list.innerHTML = rows.map((e,i) => {
     const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
     const uid = 'lb-routes-'+i;
+    // e.routes may be an array (session) or a string summary (from Sheets)
     let routesHtml = '';
-    if (e.routes && e.routes.length) {
+    if (Array.isArray(e.routes) && e.routes.length) {
       routesHtml = `<div class="lb-routes" id="${uid}" style="display:none">` +
         e.routes.map((r,ri) => {
           const col = TRUCK_COLORS[ri % TRUCK_COLORS.length];
@@ -1923,23 +1808,53 @@ function renderLeaderboard() {
             <div class="lb-route-stops">${r.stops.join(' → ')}</div>
             <div class="lb-route-stats">${r.miles} mi · ${r.weight.toLocaleString()} lbs</div>
           </div>`;
-        }).join('') +
-      '</div>';
+        }).join('') + '</div>';
+    } else if (typeof e.routes === 'string' && e.routes) {
+      routesHtml = `<div class="lb-routes" id="${uid}" style="display:none"><div style="font-size:13px;color:var(--text2);padding:4px 0;">${e.routes.replace(/\|/g,'<br>')}</div></div>`;
     }
+    const gradeColor = gc[e.grade] || 'var(--text2)';
+    const milesStr = e.miles ? (Number(e.miles)||0).toLocaleString()+' mi · ' : '';
+    const violations = e.violations !== undefined ? e.violations : '—';
+    const violStr = violations !== '—' ? violations+' violation'+(violations!==1?'s':'') : '';
     return `<div class="lb-row">
       <div class="lb-rank">${rank}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="lb-name">${e.name}</span>
-          <span class="lb-grade" style="color:${gc[e.grade]}">${e.grade}</span>
+          <span class="lb-name">${e.name||e.player||'Anonymous'}</span>
+          <span class="lb-grade" style="color:${gradeColor}">${e.grade||''}</span>
         </div>
-        <div class="lb-meta">${e.trucks} trucks · ${e.miles?e.miles.toLocaleString()+' mi · ':''} ${e.violations} violation${e.violations!==1?'s':''} · ${e.time}</div>
-        ${e.routes?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''}
+        <div class="lb-meta">${e.trucks||0} trucks · ${milesStr}${violStr}${violStr&&e.time?' · ':''}${e.time||''}</div>
+        ${routesHtml?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''}
         ${routesHtml}
       </div>
       <div class="lb-score">${e.score}</div>
     </div>`;
   }).join('');
+}
+
+function renderLeaderboard() {
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⏳ Loading leaderboard…</div>';
+
+  // Try to fetch live data from Google Sheets
+  fetch(SHEETS_URL, { method: 'GET', mode: 'cors' })
+    .then(resp => resp.json())
+    .then(rows => {
+      if (Array.isArray(rows) && rows.length) {
+        // Merge with session entries, deduplicate by timestamp, re-sort
+        const sessionMap = {};
+        leaderboard.forEach(e => { if (e.timestamp) sessionMap[e.timestamp] = e; });
+        rows.forEach(e => { if (e.timestamp) sessionMap[e.timestamp] = e; });
+        const merged = Object.values(sessionMap).sort((a,b) => b.score - a.score);
+        _renderLeaderboardRows(merged);
+      } else {
+        _renderLeaderboardRows(leaderboard);
+      }
+    })
+    .catch(() => {
+      // Sheets unreachable — fall back to session-only leaderboard
+      _renderLeaderboardRows(leaderboard);
+    });
 }
 
 function toggleLbRoutes(uid, btn) {
@@ -2488,21 +2403,8 @@ function _drawUserMap(finalGeos, activeTrucks) {
   var bounds = [[DEPOT.lat,DEPOT.lng]];
   Object.values(finalGeos).forEach(function(item) {
     var geo=item.geo, lls=item.lls, color=item.color;
-    // Always draw fallback polyline first
-    var fallback = L.polyline(lls,{color:color,weight:3,opacity:0.6,dashArray:'6,4'}).addTo(resultsMapUser);
-    if (geo) {
-      fallback.remove();
-      L.geoJSON(geo,{style:function(){return {color:color,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapUser);
-    } else if (lls) {
-      // Re-fetch via queue (has built-in retry + will hit cache if already fetched)
-      (function(cLls, cCol, cFallback, cMap) {
-        fetchRouteGeo(cLls).then(function(g) {
-          if (!g || resultsMapUser !== cMap) return;
-          cFallback.remove();
-          L.geoJSON(g,{style:function(){return {color:cCol,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(cMap);
-        }).catch(function(){});
-      })(lls, color, fallback, resultsMapUser);
-    }
+    // Draw solid straight-line route
+    L.polyline(lls,{color:color,weight:3.5,opacity:0.88,lineJoin:'round',lineCap:'round'}).addTo(resultsMapUser);
     if (lls) lls.forEach(function(ll){ bounds.push(ll); });
   });
   // External legend
@@ -2539,19 +2441,8 @@ function _drawSystemMap(sysGeoMap) {
       bounds.push([c.lat,c.lng]);
     });
     var item = sysGeoMap && sysGeoMap[sr.num];
-    if (item && item.geo) {
-      L.geoJSON(item.geo,{style:function(){return {color:col,weight:4,opacity:0.9,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapSystem);
-    } else {
-      // Draw dotted fallback, then try fetching geo (may hit cache from submit)
-      var fallback = L.polyline(lls,{color:col,weight:3,opacity:0.7,dashArray:'7,4'}).addTo(resultsMapSystem);
-      (function(cLls, cCol, cFallback, cMap) {
-        fetchRouteGeo(cLls).then(function(g) {
-          if (!g || resultsMapSystem !== cMap) return;
-          cFallback.remove();
-          L.geoJSON(g,{style:function(){return {color:cCol,weight:4,opacity:0.9,lineJoin:'round',lineCap:'round'};}}).addTo(cMap);
-        }).catch(function(){});
-      })(lls, col, fallback, resultsMapSystem);
-    }
+    // Draw solid straight-line route
+    L.polyline(lls,{color:col,weight:3.5,opacity:0.9,lineJoin:'round',lineCap:'round'}).addTo(resultsMapSystem);
   });
   // External legend
   var legendEl = document.getElementById('legend-system');
