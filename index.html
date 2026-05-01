@@ -625,9 +625,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div></div>
       <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery window compliance</strong><span class="rule-pts">150 pts</span> — Every store has a delivery window shown on its order chip. All stops on a truck must have compatible windows — your driver needs to reach each store while it’s open.
         <div style="margin-top:8px;background:rgba(240,166,35,0.06);border:1px solid rgba(240,166,35,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
-          <strong style="color:var(--text);">Formula:</strong> 150 × (stores reached within window ÷ total stores)<br>
+          <strong style="color:var(--text);">Formula:</strong> 150 × (stores reached within window ÷ total stores)
           <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px;font-size:12px;color:var(--text3);">
-            💡 <strong style="color:var(--text);">Tip:</strong> Window compatibility is the main reason certain stores are paired together. If two stores on the same truck have windows that don’t overlap enough to serve both, you’ll lose points.
+            💡 <strong style="color:var(--text);">Tip:</strong> Window compatibility is the main reason certain stores are paired together. If two stores on the same truck have windows that don’t overlap enough for a driver to reach both, you’ll lose points.
           </div>
         </div>
       </div></div>
@@ -981,6 +981,54 @@ const STOP_NAME_TO_ID = {
   'W Vallejo':'0283','Brentwood':'0440','San Rafael':'0459','Windsor':'0462',
 };
 
+
+// Pre-computed highway waypoints for system routes — no OSRM dependency
+// Each path: depot → stop1 → stop2 following major highway corridors
+const SYS_ROUTE_PATHS = {
+  // Rt.2: Sacramento → I-80W → I-680S → CA-4E → Buchanan → Brentwood
+  2: [[38.506,-121.419],[38.530,-121.500],[38.555,-121.740],[38.440,-121.920],
+      [38.335,-121.985],[38.250,-122.040],[38.222,-122.129],[38.130,-122.180],
+      [38.050,-122.158],[38.019,-122.070],[38.015,-121.950],[38.028,-121.885],
+      [38.010,-121.830],[37.985,-121.760],[37.960,-121.720],[37.931,-121.696]],
+  // Rt.3: Sacramento → I-80W → San Pablo → Richmond-San Rafael Bridge → US-101 → Novato
+  3: [[38.506,-121.419],[38.555,-121.740],[38.440,-121.920],[38.335,-121.985],
+      [38.250,-122.040],[38.222,-122.129],[38.117,-122.233],[38.020,-122.280],
+      [37.980,-122.320],[37.962,-122.343],[37.942,-122.365],[37.935,-122.400],
+      [37.942,-122.450],[37.960,-122.510],[37.973,-122.530],[38.010,-122.555],
+      [38.050,-122.560],[38.107,-122.570]],
+  // Rt.6: Sacramento → I-80W → US-101N → Windsor → back south → W Vallejo
+  6: [[38.506,-121.419],[38.555,-121.740],[38.440,-121.920],[38.335,-121.985],
+      [38.250,-122.040],[38.222,-122.129],[38.117,-122.233],[38.090,-122.250],
+      [38.060,-122.340],[38.080,-122.490],[38.110,-122.540],[38.180,-122.590],
+      [38.233,-122.637],[38.330,-122.700],[38.440,-122.714],[38.500,-122.770],
+      [38.548,-122.814],[38.500,-122.770],[38.440,-122.714],[38.330,-122.700],
+      [38.233,-122.637],[38.180,-122.590],[38.130,-122.540],[38.104,-122.274]],
+  // Rt.7: Sacramento → I-80W → Richmond → Richmond-San Rafael Bridge → San Rafael
+  7: [[38.506,-121.419],[38.555,-121.740],[38.440,-121.920],[38.335,-121.985],
+      [38.250,-122.040],[38.222,-122.129],[38.117,-122.233],[38.020,-122.280],
+      [37.960,-122.330],[37.936,-122.348],[37.935,-122.400],[37.942,-122.450],
+      [37.960,-122.510],[37.974,-122.531]],
+  // Rt.14: Sacramento → CA-4E → Oakley → back to I-80W → US-101N → Santa Rosa
+  14: [[38.506,-121.419],[38.530,-121.500],[38.555,-121.740],[38.440,-121.920],
+       [38.335,-121.985],[38.250,-122.040],[38.222,-122.129],[38.130,-122.180],
+       [38.050,-122.158],[38.019,-122.070],[38.015,-121.950],[38.005,-121.806],
+       [37.998,-121.713],[38.005,-121.806],[38.015,-121.950],[38.019,-122.070],
+       [38.050,-122.158],[38.130,-122.180],[38.222,-122.129],[38.250,-122.040],
+       [38.335,-121.985],[38.440,-121.920],[38.555,-121.740],[38.530,-121.500],
+       [38.506,-121.419],[38.530,-121.500],[38.555,-121.740],[38.440,-121.920],
+       [38.335,-121.985],[38.250,-122.040],[38.222,-122.129],[38.117,-122.233],
+       [38.090,-122.350],[38.110,-122.540],[38.180,-122.590],[38.233,-122.637],
+       [38.330,-122.700],[38.440,-122.714]],
+  // Rt.19: Sacramento → I-80W → I-680S → Concord → Pleasant Hill
+  19: [[38.506,-121.419],[38.555,-121.740],[38.440,-121.920],[38.335,-121.985],
+       [38.250,-122.040],[38.222,-122.129],[38.130,-122.180],[38.050,-122.158],
+       [38.019,-122.070],[37.995,-122.050],[37.978,-122.031],[37.960,-122.045],
+       [37.948,-122.061]],
+  // Rt.21: Sacramento → I-80W → W Vallejo (solo)
+  21: [[38.506,-121.419],[38.555,-121.740],[38.440,-121.920],[38.335,-121.985],
+       [38.250,-122.040],[38.222,-122.129],[38.117,-122.233],[38.104,-122.274]]
+};
+
 // ═══════════════════════════════════════════════════════════════
 // 3. STATE
 // ═══════════════════════════════════════════════════════════════
@@ -1162,70 +1210,18 @@ function addResultsLegend(map, entries, title) {
   ctrl.addTo(map);
 }
 
-// OSRM request queue — serialized, cached, with retry + backoff
-const _osrmCache = {};
-const _osrmQueue = [];
-let _osrmActive = 0;
-const OSRM_MAX_CONCURRENT = 2;
-
-function _osrmCacheKey(latLngs) {
-  return latLngs.map(function(ll){ return ll[0].toFixed(4) + ',' + ll[1].toFixed(4); }).join(';');
-}
-
-function _processOsrmQueue() {
-  while (_osrmActive < OSRM_MAX_CONCURRENT && _osrmQueue.length > 0) {
-    var item = _osrmQueue.shift();
-    _osrmActive++;
-    _osrmFetchOne(item.coords, item.key, item.retries, item.resolve);
-  }
-}
-
-function _osrmFetchOne(coords, key, retriesLeft, resolve) {
-  var url = 'https://router.project-osrm.org/route/v1/driving/' + coords + '?overview=full&geometries=geojson';
-  var controller = new AbortController();
-  var t = setTimeout(function(){ controller.abort(); }, 12000);
-  fetch(url, { signal: controller.signal })
-    .then(function(resp) {
-      clearTimeout(t);
-      if (resp.status === 429 && retriesLeft > 0) throw new Error('rate-limited');
-      return resp.json();
-    })
-    .then(function(data) {
-      if (data.code === 'Ok' && data.routes && data.routes[0]) {
-        var geo = data.routes[0].geometry;
-        _osrmCache[key] = geo;
-        resolve(geo);
-      } else {
-        throw new Error('bad response');
-      }
-    })
-    .catch(function() {
-      clearTimeout(t);
-      if (retriesLeft > 0) {
-        var delay = (4 - retriesLeft) * 1500 + Math.random() * 800;
-        setTimeout(function() {
-          _osrmFetchOne(coords, key, retriesLeft - 1, resolve);
-        }, delay);
-        return; // don't decrement _osrmActive or process queue yet
-      }
-      resolve(null);
-    })
-    .finally(function() {
-      if (retriesLeft <= 0 || _osrmCache[key]) {
-        _osrmActive--;
-        _processOsrmQueue();
-      }
-    });
-}
-
-function fetchRouteGeo(latLngs) {
-  var key = _osrmCacheKey(latLngs);
-  if (_osrmCache[key]) return Promise.resolve(_osrmCache[key]);
-  return new Promise(function(resolve) {
-    var coords = latLngs.map(function(ll){ return ll[1].toFixed(5) + ',' + ll[0].toFixed(5); }).join(';');
-    _osrmQueue.push({ coords: coords, key: key, retries: 3, resolve: resolve });
-    _processOsrmQueue();
-  });
+async function fetchRouteGeo(latLngs) {
+  try {
+    const coords = latLngs.map(([lat,lng]) => `${lng},${lat}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 15000);
+    const resp = await fetch(url, { signal:controller.signal });
+    clearTimeout(t);
+    const data = await resp.json();
+    if (data.code === 'Ok') return data.routes[0].geometry;
+  } catch {}
+  return null;
 }
 
 function clearAllRoutes() {
@@ -1435,34 +1431,26 @@ async function submitRoutes() {
   document.getElementById('submit-btn').textContent = '⏳ Calculating routes…';
   document.getElementById('submit-btn').disabled = true;
 
-  // Queue all route geo fetches through the OSRM queue (max 2 concurrent, with retry)
+  // Fetch user route geometries and system route geometries in parallel
   const finalGeos = {};
   const sysGeoMap = {};
 
-  // Build all requests — the queue handles serialization and retry internally
-  const userActive = trucks.filter(t=>t.orders.length>0);
-  const userPromises = userActive.map(function(truck, i) {
+  const userPromises = trucks.filter(t=>t.orders.length>0).map(async (truck, i) => {
     const stores = optimizeStopOrder(getUniqueStores(truck.orders));
     const lls = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-    return fetchRouteGeo(lls).then(function(geo) {
-      finalGeos[truck.id] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
-    }).catch(function() {
-      finalGeos[truck.id] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
-    });
+    const geo = await fetchRouteGeo(lls).catch(()=>null);
+    finalGeos[truck.id] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
   });
 
-  const sysPromises = SYS_ROUTES.map(function(sr, i) {
+  const sysPromises = SYS_ROUTES.map(async (sr, i) => {
     const storeIds = sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean);
     const ordered = optimizeStopOrder(storeIds);
     const lls = [[DEPOT.lat,DEPOT.lng], ...ordered.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-    return fetchRouteGeo(lls).then(function(geo) {
-      sysGeoMap[sr.num] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
-    }).catch(function() {
-      sysGeoMap[sr.num] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
-    });
+    const geo = await fetchRouteGeo(lls).catch(()=>null);
+    sysGeoMap[sr.num] = { geo, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
   });
 
-  await Promise.allSettled(userPromises.concat(sysPromises));
+  await Promise.allSettled([...userPromises, ...sysPromises]);
 
   const result = calculateScore();
   saveToLeaderboard(result);
@@ -2494,14 +2482,19 @@ function _drawUserMap(finalGeos, activeTrucks) {
       fallback.remove();
       L.geoJSON(geo,{style:function(){return {color:color,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapUser);
     } else if (lls) {
-      // Re-fetch via queue (has built-in retry + will hit cache if already fetched)
-      (function(cLls, cCol, cFallback, cMap) {
-        fetchRouteGeo(cLls).then(function(g) {
-          if (!g || resultsMapUser !== cMap) return;
-          cFallback.remove();
-          L.geoJSON(g,{style:function(){return {color:cCol,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(cMap);
-        }).catch(function(){});
-      })(lls, color, fallback, resultsMapUser);
+      // Try fetching route geo with retry
+      (function(cLls, cCol, cFallback) {
+        var attempt = function(tries) {
+          fetchRouteGeo(cLls).then(function(g) {
+            if (!g || resultsMapUser === null) return;
+            cFallback.remove();
+            L.geoJSON(g,{style:function(){return {color:cCol,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapUser);
+          }).catch(function() {
+            if (tries > 1) setTimeout(function(){ attempt(tries-1); }, 2000);
+          });
+        };
+        attempt(3);
+      })(lls, color, fallback);
     }
     if (lls) lls.forEach(function(ll){ bounds.push(ll); });
   });
@@ -2538,19 +2531,14 @@ function _drawSystemMap(sysGeoMap) {
         .bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});
       bounds.push([c.lat,c.lng]);
     });
+    // Use OSRM geo if available, else embedded highway waypoints, else straight line
     var item = sysGeoMap && sysGeoMap[sr.num];
     if (item && item.geo) {
       L.geoJSON(item.geo,{style:function(){return {color:col,weight:4,opacity:0.9,lineJoin:'round',lineCap:'round'};}}).addTo(resultsMapSystem);
+    } else if (SYS_ROUTE_PATHS[sr.num]) {
+      L.polyline(SYS_ROUTE_PATHS[sr.num],{color:col,weight:4,opacity:0.88,lineJoin:'round',lineCap:'round'}).addTo(resultsMapSystem);
     } else {
-      // Draw dotted fallback, then try fetching geo (may hit cache from submit)
-      var fallback = L.polyline(lls,{color:col,weight:3,opacity:0.7,dashArray:'7,4'}).addTo(resultsMapSystem);
-      (function(cLls, cCol, cFallback, cMap) {
-        fetchRouteGeo(cLls).then(function(g) {
-          if (!g || resultsMapSystem !== cMap) return;
-          cFallback.remove();
-          L.geoJSON(g,{style:function(){return {color:cCol,weight:4,opacity:0.9,lineJoin:'round',lineCap:'round'};}}).addTo(cMap);
-        }).catch(function(){});
-      })(lls, col, fallback, resultsMapSystem);
+      L.polyline(lls,{color:col,weight:3,opacity:0.7,dashArray:'7,4'}).addTo(resultsMapSystem);
     }
   });
   // External legend
