@@ -1836,20 +1836,11 @@ function renderLeaderboard() {
   const list = document.getElementById('lb-list');
   list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⏳ Loading leaderboard…</div>';
 
-  // Try to fetch live data from Google Sheets
+  // Fetch live data from Google Sheets — Sheets is the source of truth
   fetch(SHEETS_URL, { method: 'GET', mode: 'cors' })
     .then(resp => resp.json())
     .then(rows => {
-      if (Array.isArray(rows) && rows.length) {
-        // Merge with session entries, deduplicate by timestamp, re-sort
-        const sessionMap = {};
-        leaderboard.forEach(e => { if (e.timestamp) sessionMap[e.timestamp] = e; });
-        rows.forEach(e => { if (e.timestamp) sessionMap[e.timestamp] = e; });
-        const merged = Object.values(sessionMap).sort((a,b) => b.score - a.score);
-        _renderLeaderboardRows(merged);
-      } else {
-        _renderLeaderboardRows(leaderboard);
-      }
+      _renderLeaderboardRows(Array.isArray(rows) && rows.length ? rows : leaderboard);
     })
     .catch(() => {
       // Sheets unreachable — fall back to session-only leaderboard
