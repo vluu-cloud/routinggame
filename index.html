@@ -992,7 +992,7 @@ let trucks = [], poolOrders = [];
 let poolSearch = '', poolSort = 'name-asc', poolFilters = new Set();
 let truckCounter = 0, draggedOrder = null, dragSource = null;
 let timerInterval = null, startTime = null, elapsedSeconds = 0;
-let leaderboard = JSON.parse(sessionStorage.getItem('routing_lb') || '[]');
+let leaderboard = (() => { try { return JSON.parse(sessionStorage.getItem('routing_lb') || '[]'); } catch(e) { return []; } })();
 let fromScreen = 'intro', playerName = '';
 const routeTimers = {};
 
