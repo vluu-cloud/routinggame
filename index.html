@@ -407,6 +407,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   font-size:15px;color:var(--text);cursor:pointer;
   transition:background .1s;white-space:nowrap;
 }
+@media(hover:none){
+  .ctx-item{padding:12px 14px;font-size:16px;}
+  .ctx-menu{min-width:220px;}
+}
 .ctx-item:hover{background:var(--bg3);}
 .ctx-item.danger{color:#fca5a5;}
 .ctx-item.danger:hover{background:rgba(240,76,90,0.12);}
@@ -587,9 +591,53 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .gh-stats{gap:10px;}
 }
 @media(max-width:600px){
-  .game-body{grid-template-columns:1fr;grid-template-rows:180px auto auto;}
-  .map-panel{order:-1;}
-  .gh-stats{gap:6px;}
+  .game-header{flex-wrap:wrap;height:auto;padding:6px 10px;gap:6px;}
+  .gh-brand{font-size:15px;}
+  .gh-player{font-size:13px;}
+  .gh-stats{gap:4px;width:100%;justify-content:space-around;}
+  .gh-val{font-size:16px;}
+  .gh-lab{font-size:11px;}
+  .timer{font-size:16px;padding:4px 9px;}
+  .game-body{
+    display:flex;flex-direction:column;
+    height:calc(100vh - 74px); /* adjusted for taller header */
+    overflow:hidden;
+  }
+  .map-panel{height:200px;flex-shrink:0;}
+  .orders-panel{
+    flex-shrink:0;max-height:42vh;overflow-y:auto;
+    border-right:none;border-bottom:1px solid var(--border);
+  }
+  .trucks-panel{
+    flex:1;overflow-y:auto;
+    border-right:none;
+  }
+  /* Bigger touch targets on mobile */
+  .order-chip{padding:10px 12px;font-size:15px;}
+  .order-row{padding:9px 10px;font-size:15px;}
+  .filter-btn{padding:5px 10px;font-size:14px;}
+  .add-truck-btn{padding:12px;font-size:16px;}
+  .submit-btn{padding:14px;font-size:16px;}
+  .drop-zone{min-height:60px;}
+}
+
+/* Touch drag ghost element */
+#touch-drag-ghost{
+  position:fixed;pointer-events:none;z-index:99999;
+  opacity:0.75;transform:scale(1.05);
+  background:var(--bg3);border:1px solid var(--accent);
+  border-radius:7px;padding:8px 12px;font-size:14px;
+  color:var(--text);font-family:var(--font);
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);
+  max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:none;
+}
+/* Long-press hint pulse on touch devices */
+@media(hover:none){
+  .order-chip,.order-row{
+    -webkit-tap-highlight-color:transparent;
+    touch-action:none;
+  }
 }
 </style>
 </head>
@@ -820,6 +868,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
 <div class="toast" id="toast"></div>
 <div class="ctx-menu" id="ctx-menu" onmouseleave="closeCtx()"></div>
+<div id="touch-drag-ghost"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
@@ -2559,6 +2608,231 @@ function showToast(msg) {
 
 // Enter key on name input
 document.getElementById('player-name-input').addEventListener('keydown', e => { if(e.key==='Enter') startGame(); });
+
+// ═══════════════════════════════════════════════════════════════
+// TOUCH DRAG AND DROP SUPPORT (mobile)
+// Mirrors the HTML5 drag API using touch events on .order-chip
+// and .order-row elements. Works alongside the existing drag logic.
+// ═══════════════════════════════════════════════════════════════
+(function() {
+  'use strict';
+  var ghost = document.getElementById('touch-drag-ghost');
+  var touchDragOrder = null;
+  var touchDragSource = null;
+  var longPressTimer = null;
+  var isDraggingTouch = false;
+  var lastDropTarget = null;
+
+  function getOrderFromEl(el) {
+    var chip = el.closest('.order-chip, .order-row');
+    if (!chip) return null;
+    var id = chip.dataset.id;
+    // search pool then trucks
+    var o = poolOrders.find(function(x){ return x.id===id; });
+    if (!o) {
+      trucks.forEach(function(t){ var found=t.orders.find(function(x){return x.id===id;}); if(found) o=found; });
+    }
+    return o || null;
+  }
+
+  function getSourceFromEl(el) {
+    var chip = el.closest('.order-chip, .order-row');
+    if (!chip) return null;
+    if (chip.classList.contains('order-chip')) return 'pool';
+    var dz = chip.closest('.drop-zone');
+    if (dz && dz.dataset.tid) return 'truck_' + dz.dataset.tid;
+    return null;
+  }
+
+  function showGhost(label, x, y) {
+    ghost.textContent = label;
+    ghost.style.display = 'block';
+    moveGhost(x, y);
+  }
+
+  function moveGhost(x, y) {
+    ghost.style.left = (x - ghost.offsetWidth / 2) + 'px';
+    ghost.style.top  = (y - 48) + 'px';
+  }
+
+  function hideGhost() {
+    ghost.style.display = 'none';
+  }
+
+  function highlightTarget(el) {
+    if (lastDropTarget && lastDropTarget !== el) {
+      lastDropTarget.classList.remove('drag-over');
+    }
+    if (el) {
+      el.classList.add('drag-over');
+    }
+    lastDropTarget = el;
+  }
+
+  function clearHighlight() {
+    if (lastDropTarget) {
+      lastDropTarget.classList.remove('drag-over');
+      lastDropTarget = null;
+    }
+  }
+
+  function getDropTarget(x, y) {
+    // Temporarily hide ghost so elementFromPoint works
+    ghost.style.display = 'none';
+    var el = document.elementFromPoint(x, y);
+    ghost.style.display = 'block';
+    if (!el) return null;
+
+    // Check if landed in a truck drop-zone
+    var dz = el.closest('.drop-zone');
+    if (dz) return { type: 'truck', tid: parseInt(dz.dataset.tid), el: dz };
+
+    // Check if landed in the order pool
+    var pool = el.closest('#order-pool, .orders-panel');
+    if (pool) return { type: 'pool', el: pool };
+
+    return null;
+  }
+
+  // ── Long-press to start drag ──
+  document.addEventListener('touchstart', function(e) {
+    var chip = e.target.closest('.order-chip, .order-row');
+    if (!chip) return;
+
+    var touch = e.touches[0];
+    var startX = touch.clientX, startY = touch.clientY;
+
+    longPressTimer = setTimeout(function() {
+      var o = getOrderFromEl(chip);
+      var src = getSourceFromEl(chip);
+      if (!o || !src) return;
+
+      touchDragOrder = o;
+      touchDragSource = src;
+      isDraggingTouch = true;
+
+      // Sync with existing drag state variables
+      draggedOrder = o;
+      dragSource = src;
+
+      chip.classList.add('dragging');
+      showGhost(o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs', startX, startY);
+
+      // Brief haptic if available
+      if (navigator.vibrate) navigator.vibrate(40);
+    }, 400);
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (longPressTimer && !isDraggingTouch) {
+      // Cancel long press if finger moved too much
+      var t = e.touches[0];
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    if (!isDraggingTouch) return;
+    e.preventDefault(); // prevent scroll during drag
+
+    var touch = e.touches[0];
+    moveGhost(touch.clientX, touch.clientY);
+
+    var target = getDropTarget(touch.clientX, touch.clientY);
+    highlightTarget(target ? target.el : null);
+  }, { passive: false });
+
+  document.addEventListener('touchend', function(e) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+
+    if (!isDraggingTouch) return;
+
+    var touch = e.changedTouches[0];
+    var target = getDropTarget(touch.clientX, touch.clientY);
+
+    clearHighlight();
+    hideGhost();
+
+    // Clean up dragging class on chips
+    document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
+      .forEach(function(el){ el.classList.remove('dragging'); });
+
+    if (target && touchDragOrder) {
+      if (target.type === 'truck') {
+        var currentSrc = touchDragSource;
+        var destTid = target.tid;
+        if ('truck_'+destTid !== currentSrc) {
+          // Use existing drop logic by temporarily setting globals
+          draggedOrder = touchDragOrder;
+          dragSource = touchDragSource;
+          var fakeEvent = { preventDefault: function(){}, currentTarget: target.el };
+          dropToTruck(fakeEvent, destTid);
+        }
+      } else if (target.type === 'pool') {
+        if (touchDragSource !== 'pool') {
+          draggedOrder = touchDragOrder;
+          dragSource = touchDragSource;
+          var fakePoolEvent = { preventDefault: function(){} };
+          dropToPool(fakePoolEvent);
+        }
+      }
+    }
+
+    touchDragOrder = null;
+    touchDragSource = null;
+    draggedOrder = null;
+    dragSource = null;
+    isDraggingTouch = false;
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', function() {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    isDraggingTouch = false;
+    touchDragOrder = null;
+    touchDragSource = null;
+    draggedOrder = null;
+    dragSource = null;
+    clearHighlight();
+    hideGhost();
+    document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
+      .forEach(function(el){ el.classList.remove('dragging'); });
+  }, { passive: true });
+
+  // ── Tap = context menu on touch devices ──
+  // On mobile, a quick tap on an order chip opens the context/move menu.
+  // This is a fallback for users who don't want to long-press-drag.
+  var tapTarget = null;
+  var tapStartX = 0, tapStartY = 0;
+
+  document.addEventListener('touchstart', function(e) {
+    var chip = e.target.closest('.order-chip, .order-row');
+    if (!chip) return;
+    tapTarget = chip;
+    tapStartX = e.touches[0].clientX;
+    tapStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (isDraggingTouch) { tapTarget = null; return; }
+    if (!tapTarget) return;
+    var touch = e.changedTouches[0];
+    var dx = Math.abs(touch.clientX - tapStartX);
+    var dy = Math.abs(touch.clientY - tapStartY);
+    if (dx < 8 && dy < 8) {
+      // It's a tap — open context menu
+      var o = getOrderFromEl(tapTarget);
+      var src = getSourceFromEl(tapTarget);
+      if (o) {
+        var tid = src && src.startsWith('truck_') ? parseInt(src.replace('truck_','')) : null;
+        var fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, preventDefault: function(){} };
+        openCtx(fakeEvent, o, tid);
+      }
+    }
+    tapTarget = null;
+  }, { passive: true });
+
+})();
+
 </script>
 </body>
 </html>
