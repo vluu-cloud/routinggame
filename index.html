@@ -725,17 +725,21 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .intro-sticky-footer { display: none; }
 
 @media (max-width: 600px) {
-  /* ── Intro: simple full-page scroll, no sticky footer tricks ── */
-  #screen-intro {
-    overflow-y: auto !important; overflow-x: hidden;
-    padding: 1.5rem 1.25rem 2rem; height: 100vh;
-    align-items: stretch; justify-content: flex-start;
+  /* ── Intro: natural scroll — let content determine height ── */
+  #screen-intro.screen {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding: 1.5rem 1.25rem 3rem;
+    align-items: flex-start;
+    justify-content: flex-start;
   }
-  .intro-inner { margin: 0 auto; max-width: 100%; }
-  .intro-scroll-area { display: contents; } /* unwrap — content flows normally */
-  .intro-sticky-footer { display: none !important; } /* hidden — desktop name row is visible */
+  .intro-inner { margin: 0 auto; max-width: 100%; width: 100%; }
+  .intro-scroll-area { display: contents; }
+  .intro-sticky-footer { display: none !important; }
   #intro-name-row-desktop { display: flex !important; margin-bottom: 1rem; }
-  #intro-lb-btn-desktop { display: block !important; }
+  #intro-lb-btn-desktop { display: block !important; margin-bottom: 1rem; }
   .logo-mark { font-size: 40px; margin-bottom: .75rem; }
   .intro-title { font-size: 26px; }
   .intro-sub { font-size: 15px; margin-bottom: 1rem; }
@@ -749,33 +753,75 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .name-row { margin-bottom: .75rem; }
   .btn-ghost { padding: 6px; font-size: 14px; }
 
-  .game-header { height: auto; flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
-  .gh-brand { font-size: 16px; }
-  .gh-player { font-size: 13px; }
-  .gh-stats { gap: 6px; flex: 1 1 100%; justify-content: space-around; order: 3; }
-  .gh-val { font-size: 17px; } .timer { font-size: 17px; padding: 5px 11px; }
+  .game-header { height: auto; flex-wrap: wrap; padding: 8px 12px; gap: 6px; }
+  .gh-brand { font-size: 15px; }
+  .gh-player { font-size: 12px; padding: 3px 8px; }
+  .gh-stats { gap: 4px; flex: 1 1 100%; justify-content: space-around; order: 3; }
+  .gh-val { font-size: 15px; } .gh-lab { font-size: 10px; }
+  .timer { font-size: 15px; padding: 4px 9px; }
 
-  .game-body { display: block !important; position: relative; overflow: hidden; }
-  .orders-panel, .trucks-panel, .map-panel {
-    display: none !important; position: absolute;
-    inset: 0; bottom: 56px; border: none !important; overflow-y: auto;
+  /* ── Grid: Orders | Trucks on top, Map below ── */
+  .game-body {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 195px;
+    height: calc(100vh - var(--game-header-h, 88px));
+    overflow: hidden;
   }
-  .map-panel { overflow: hidden !important; }
-  #game-map { height: 100% !important; }
-  .orders-panel.tab-active, .trucks-panel.tab-active, .map-panel.tab-active {
-    display: flex !important; flex-direction: column;
+  .orders-panel {
+    display: flex !important;
+    grid-column: 1; grid-row: 1;
+    overflow-y: auto; padding: 8px 8px 4px; gap: 6px;
+    border-right: 1px solid var(--border) !important;
+    border-bottom: none !important;
+    max-height: none; flex-shrink: unset;
   }
-  .mobile-tab-bar {
-    display: flex; position: absolute; bottom: 0; left: 0; right: 0;
-    height: 56px; background: var(--bg2); border-top: 1px solid var(--border2); z-index: 500;
+  .trucks-panel {
+    display: flex !important;
+    grid-column: 2; grid-row: 1;
+    overflow-y: auto; padding: 6px 6px 0; gap: 5px;
+    flex-shrink: unset;
   }
+  .map-panel {
+    display: block !important;
+    grid-column: 1 / -1; grid-row: 2;
+    position: relative; height: 195px;
+  }
+  #game-map { width: 100%; height: 100%; }
+  .mobile-tab-bar { display: none !important; }
+  /* Panels always visible — no tab-active needed */
+  .tab-active { /* unused */ }
 
-  .orders-panel { padding: 10px 10px 4px; gap: 7px; }
-  .trucks-panel { padding: 8px 8px 0; gap: 6px; }
-  .pool-filters { gap: 6px; }
-  .filter-btn { padding: 6px 12px; font-size: 14px; }
-  .order-chip { padding: 11px 13px; font-size: 15px; }
-  .order-row { padding: 10px 11px; font-size: 15px; }
+  /* Compact panel internals for narrow columns */
+  .orders-panel { padding: 6px 6px 4px; }
+  .trucks-panel { padding: 6px 6px 0; }
+  .pool-filters { gap: 3px; flex-wrap: wrap; }
+  .filter-btn { padding: 4px 7px; font-size: 12px; }
+  .pool-search { font-size: 13px; padding: 5px 7px; }
+  .pool-select { font-size: 12px; padding: 3px 4px; }
+  .pool-title { font-size: 11px; }
+  .pool-badge { font-size: 12px; }
+  .order-chip { padding: 8px 9px; font-size: 13px; }
+  .chip-store { font-size: 13px; }
+  .chip-sub { font-size: 11px; }
+  .chip-id { font-size: 11px; }
+  .cflag { font-size: 10px; padding: 1px 4px; }
+  .order-row { padding: 7px 8px; font-size: 13px; }
+  .or-store { font-size: 13px; }
+  .or-cases, .or-weight { font-size: 11px; }
+  /* Compact truck cards in narrow right column */
+  .truck-head { padding: 7px 8px; gap: 6px; }
+  .truck-name { font-size: 13px; }
+  .truck-stats { font-size: 11px; }
+  .truck-miles { font-size: 12px; }
+  .cap-row { padding: 3px 7px; gap: 5px; }
+  .cap-label { font-size: 10px; min-width: 30px; }
+  .cap-pct { font-size: 10px; }
+  .drop-zone { padding: 6px 7px; min-height: 44px; }
+  .drop-hint { font-size: 12px; }
+  .add-truck-btn { padding: 8px; font-size: 13px; }
+  .submit-btn { padding: 10px; font-size: 14px; }
+  .btn-rm { font-size: 14px; }
 
   #screen-results { padding: 1rem; }
   .results-top { grid-template-columns: 80px 1fr; gap: 1rem; }
@@ -796,7 +842,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .lb-score { font-size: 17px; }
   .ob-col-heads, .ob-row { grid-template-columns: 70px 1fr 70px 1fr 18px; }
   .sys-ov-row { grid-template-columns: 10px 36px 1fr 56px auto; }
-  .toast { bottom: 72px; }
+  .toast { bottom: 8px; font-size: 14px; padding: 9px 16px; }
+  .miles-overlay { display: none; }
+  .legend-overlay { display: none; }
+  .dist-note { display: none; }
 }
 
 </style>
@@ -900,7 +949,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div>
     </div>
     <div class="timer" id="timer">5:00</div>
-    <button class="btn-secondary" onclick="showLeaderboard()" style="margin-left:4px;padding:6px 12px;font-size:15px;">🏆</button>
+
   </div>
 
   <div class="game-body">
@@ -3161,8 +3210,11 @@ function sheetReturn() {
 // Track game header height for game-body absolute layout
 function updateGameBodyHeight() {
   var hdr = document.querySelector('#screen-game .game-header');
-  var gb  = document.querySelector('#screen-game .game-body');
-  if (hdr && gb) gb.style.height = (window.innerHeight - hdr.offsetHeight) + 'px';
+  var screen = document.getElementById('screen-game');
+  if (hdr && screen) {
+    var h = hdr.offsetHeight;
+    screen.style.setProperty('--game-header-h', h + 'px');
+  }
 }
 window.addEventListener('resize', updateGameBodyHeight);
 
@@ -3171,10 +3223,7 @@ window.addEventListener('resize', updateGameBodyHeight);
   var orig = startGame;
   startGame = function() {
     orig();
-    setTimeout(function() {
-      updateGameBodyHeight();
-      if (window.innerWidth <= 600) switchTab('orders');
-    }, 120);
+    setTimeout(function() { updateGameBodyHeight(); }, 120);
   };
 })();
 
