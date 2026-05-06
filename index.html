@@ -713,149 +713,196 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .intro-sticky-footer { display: none; }
 
 @media (max-width: 600px) {
-  /* ── Intro: natural scroll — let content determine height ── */
-  #screen-intro.screen {
-    height: 100vh !important;
+
+  /* ══ INTRO / LEADERBOARD / RESULTS: position:fixed scroll containers ══
+     body has overflow:hidden globally. Using position:fixed gives each screen
+     its own independent scroll context that always works on iOS/Android. */
+  #screen-intro.screen,
+  #screen-leaderboard.screen,
+  #screen-results.screen {
+    position: fixed !important;
+    inset: 0 !important;
+    height: 100% !important;
     overflow-y: auto !important;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding: 1.5rem 1.25rem 3rem;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+  }
+  /* Intro layout */
+  #screen-intro.screen {
+    padding: 1.25rem 1.1rem 3rem;
     align-items: flex-start;
     justify-content: flex-start;
+    flex-direction: column;
   }
   .intro-inner { margin: 0 auto; max-width: 100%; width: 100%; }
   .intro-scroll-area { display: contents; }
   .intro-sticky-footer { display: none !important; }
   #intro-name-row-desktop { display: flex !important; margin-bottom: 1rem; }
-  #intro-lb-btn-desktop { display: block !important; margin-bottom: 1rem; }
-  .logo-mark { font-size: 40px; margin-bottom: .75rem; }
-  .intro-title { font-size: 26px; }
-  .intro-sub { font-size: 15px; margin-bottom: 1rem; }
-  .map-badge { font-size: 14px; margin-bottom: 1rem; }
+  #intro-lb-btn-desktop { display: block !important; margin-bottom: 1.5rem; }
+  .logo-mark { font-size: 36px; margin-bottom: .6rem; }
+  .intro-title { font-size: 24px !important; letter-spacing: -1px !important; }
+  .intro-sub { font-size: 14px !important; margin-bottom: .9rem; line-height: 1.6 !important; }
+  .map-badge { font-size: 13px !important; padding: 5px 12px !important; margin-bottom: .9rem; }
   .rules-card { margin-bottom: 1rem; padding: 0; overflow: hidden; }
   .rules-card h3 { display: none; }
-  .rules-toggle { display: flex; }
-  .rules-collapse { max-height: 0; }
-  .rules-collapse.open { max-height: 2000px; }
-  .rules-collapse-inner { padding: 0 14px 12px; }
+  .rules-toggle { display: flex; font-size: 15px; padding: 10px 14px; }
+  .rules-collapse { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .rules-collapse.open { max-height: 4000px; }
+  .rules-collapse-inner { padding: 0 12px 12px; }
+  .rule-row { font-size: 14px !important; line-height: 1.55 !important; margin-bottom: 8px; }
+  .rule-pts { font-size: 13px !important; }
   .name-row { margin-bottom: .75rem; }
-  .btn-ghost { padding: 6px; font-size: 14px; }
+  .name-row input { font-size: 17px !important; padding: 12px 14px !important; }
+  .btn-start { font-size: 17px !important; padding: 12px 20px !important; }
+  .btn-ghost { padding: 6px; font-size: 14px !important; }
 
-  .game-header { height: auto; flex-wrap: wrap; padding: 6px 10px; gap: 4px; }
-  .gh-brand { font-size: 14px; }
-  .gh-player { font-size: 11px !important; padding: 2px 7px; }
-  .gh-stats { gap: 4px; flex: 1 1 100%; justify-content: space-around; order: 3; }
-  .gh-val { font-size: 14px !important; } .gh-lab { font-size: 10px !important; }
-  .timer { font-size: 14px !important; padding: 4px 8px; }
+  /* ══ GAME SCREEN: flexbox so header adapts, no JS variable needed ══ */
+  #screen-game.screen {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+    position: relative;
+  }
+  .game-header {
+    flex-shrink: 0 !important;
+    height: auto !important;
+    padding: 5px 10px !important;
+    gap: 4px !important;
+    flex-wrap: nowrap !important;   /* single row — all stats visible */
+  }
+  .gh-brand { display: none; }     /* hide brand to save space */
+  .gh-player { font-size: 11px !important; padding: 2px 6px; max-width: 80px;
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gh-stats { gap: 0 !important; flex: 1 !important; justify-content: space-around !important;
+              order: 0 !important; flex-wrap: nowrap !important; }
+  .gh-stat { min-width: 0; }
+  .gh-val { font-size: 13px !important; line-height: 1.1; }
+  .gh-lab { font-size: 9px !important; }
+  .timer { font-size: 13px !important; padding: 3px 7px !important; flex-shrink: 0; }
 
-  /* ── Grid: Orders | Trucks on top, Map below ── */
+  /* ══ GAME BODY: flex col so map is always at bottom with natural height ══ */
+  .game-body {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  /* Row 1: orders + trucks side by side */
+  .orders-trucks-row {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* Since orders/trucks are direct children of game-body (no wrapper),
+     use a pseudo-approach: float them in a shared first-row via grid */
   .game-body {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 165px;
-    height: calc(100vh - var(--game-header-h, 88px));
-    overflow: hidden;
+    grid-template-rows: 1fr 200px;
   }
   .orders-panel {
     display: flex !important;
     grid-column: 1; grid-row: 1;
-    overflow-y: auto; overflow-x: hidden;
+    overflow-y: auto !important;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding: 6px 6px 4px; gap: 5px;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y !important; /* allow swipe-scroll even over chips */
+    padding: 6px 5px 4px; gap: 4px;
     border-right: 1px solid var(--border) !important;
     border-bottom: none !important;
-    max-height: none; flex-shrink: unset;
   }
   .trucks-panel {
     display: flex !important;
     grid-column: 2; grid-row: 1;
-    overflow-y: auto; overflow-x: hidden;
+    overflow-y: auto !important;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding: 6px 6px 0; gap: 5px;
-    flex-shrink: unset;
+    overscroll-behavior-y: contain;
+    padding: 6px 5px 0; gap: 4px;
   }
   .map-panel {
     display: block !important;
     grid-column: 1 / -1; grid-row: 2;
-    position: relative; height: 165px;
+    position: relative;
+    height: 200px;
   }
   #game-map { width: 100%; height: 100%; }
   .mobile-tab-bar { display: none !important; }
-  /* Panels always visible — no tab-active needed */
-  .tab-active { /* unused */ }
 
-  /* Compact panel internals for narrow columns */
-  .truck-head { flex-wrap: wrap; }
-  .truck-stats { font-size: 10px !important; white-space: normal; }
-  .truck-miles { font-size: 11px !important; }
-  .cap-row { padding: 2px 6px; }
-  .cap-label { min-width: 26px; font-size: 9px !important; }
-  .cap-pct { font-size: 9px !important; }
-  .drop-zone { min-height: 36px; }
-  /* Prevent truck card text overflow */
-  .truck-name { font-size: 12px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .add-truck-btn { padding: 7px !important; font-size: 12px !important; }
-  .submit-btn { padding: 9px !important; font-size: 13px !important; }
+  /* ── Orders panel: slightly smaller than trucks ── */
+  .orders-panel .order-chip { font-size: 12px !important; padding: 7px 8px !important; }
+  .orders-panel .chip-store { font-size: 13px !important; }
+  .orders-panel .chip-sub { font-size: 11px !important; }
+  .orders-panel .chip-id { font-size: 10px !important; }
+  .orders-panel .cflag { font-size: 9px !important; padding: 1px 4px !important; }
+  .pool-search { font-size: 12px !important; padding: 5px 7px !important; }
+  .pool-select { font-size: 11px !important; padding: 3px 4px !important; }
   .pool-filters { gap: 3px; flex-wrap: wrap; }
-  .filter-btn { padding: 4px 7px; font-size: 12px; }
-  .pool-search { font-size: 13px; padding: 5px 7px; }
-  .pool-select { font-size: 12px; padding: 3px 4px; }
-  .pool-title { font-size: 11px; }
-  .pool-badge { font-size: 12px; }
-  .order-chip { padding: 8px 9px; font-size: 13px; }
-  .chip-store { font-size: 13px; }
-  .chip-sub { font-size: 11px; }
-  .chip-id { font-size: 11px; }
-  .cflag { font-size: 10px; padding: 1px 4px; }
-  .order-row { padding: 7px 8px; font-size: 13px; }
-  .or-store { font-size: 13px; }
-  .or-cases, .or-weight { font-size: 11px; }
-  /* Compact truck cards in narrow right column */
-  .truck-head { padding: 7px 8px; gap: 6px; }
-  .truck-name { font-size: 13px; }
-  .truck-stats { font-size: 11px; }
-  .truck-miles { font-size: 12px; }
-  .cap-row { padding: 3px 7px; gap: 5px; }
-  .cap-label { font-size: 10px; min-width: 30px; }
-  .cap-pct { font-size: 10px; }
-  .drop-zone { padding: 6px 7px; min-height: 44px; }
-  .drop-hint { font-size: 12px; }
-  .add-truck-btn { padding: 8px; font-size: 13px; }
-  .submit-btn { padding: 10px; font-size: 14px; }
-  .btn-rm { font-size: 14px; }
+  .filter-btn { padding: 3px 6px !important; font-size: 11px !important; }
+  .pool-title { font-size: 10px !important; }
+  .pool-badge { font-size: 11px !important; }
 
+  /* ── Trucks panel: comfortable sizing ── */
+  .trucks-panel .truck-name { font-size: 13px !important; overflow: hidden;
+                               text-overflow: ellipsis; white-space: nowrap; }
+  .trucks-panel .truck-stats { font-size: 10px !important; }
+  .trucks-panel .truck-miles { font-size: 11px !important; }
+  .trucks-panel .truck-head { padding: 7px 8px !important; gap: 5px; flex-wrap: wrap; }
+  .trucks-panel .cap-label { font-size: 9px !important; min-width: 24px !important; }
+  .trucks-panel .cap-pct { font-size: 9px !important; }
+  .trucks-panel .cap-row { padding: 2px 6px !important; gap: 4px; }
+  .trucks-panel .drop-zone { min-height: 34px; padding: 5px 6px !important; }
+  .trucks-panel .drop-hint { font-size: 11px !important; }
+  .trucks-panel .order-row { font-size: 12px !important; padding: 6px 7px !important; }
+  .trucks-panel .or-store { font-size: 12px !important; }
+  .trucks-panel .or-cases, .trucks-panel .or-weight { font-size: 10px !important; }
+  .trucks-panel .add-truck-btn { padding: 7px !important; font-size: 12px !important; }
+  .trucks-panel .submit-btn { padding: 9px !important; font-size: 13px !important; }
+  .trucks-panel .btn-rm { font-size: 13px !important; }
+
+  /* Map overlays hidden on small map */
+  .miles-overlay { display: none; }
+  .legend-overlay { display: none; }
+  .dist-note { display: none; }
+
+  /* Results & leaderboard */
   #screen-results { padding: 1rem; }
-  .results-top { grid-template-columns: 80px 1fr; gap: 1rem; }
-  .score-circle { width: 80px; height: 80px; }
-  .score-number { font-size: 28px; }
-  .results-info h1 { font-size: 21px; }
+  .results-top { grid-template-columns: 72px 1fr; gap: .75rem; }
+  .score-circle { width: 72px; height: 72px; }
+  .score-number { font-size: 26px; }
+  .results-info h1 { font-size: 19px; }
   .compare-grid { grid-template-columns: 1fr; }
   .analysis-section > div:first-child { grid-template-columns: 1fr !important; }
   .diff-columns { grid-template-columns: 1fr; }
   .mr-orders { grid-template-columns: 1fr; }
   .mr-orders-col.mr-orders-user { border-left: none; border-top: 1px solid var(--border); }
-  .oc-table { font-size: 12px; }
-  .oc-table th, .oc-table td { padding: 5px 6px; }
+  .oc-table { font-size: 11px; }
+  .oc-table th, .oc-table td { padding: 4px 5px; }
   .results-actions { flex-direction: column; }
-  #screen-leaderboard.screen, #screen-results.screen {
-    height: 100vh !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-  }
   #screen-leaderboard { padding: 1rem; }
   .lb-wrap { max-width: 100%; }
-  .lb-header h1 { font-size: 22px; }
-  .lb-score { font-size: 17px; }
-  .ob-col-heads, .ob-row { grid-template-columns: 70px 1fr 70px 1fr 18px; }
-  .sys-ov-row { grid-template-columns: 10px 36px 1fr 56px auto; }
-  .toast { bottom: 8px; font-size: 14px; padding: 9px 16px; }
-  .miles-overlay { display: none; }
-  .legend-overlay { display: none; }
-  .dist-note { display: none; }
+  .lb-header h1 { font-size: 20px; }
+  .lb-score { font-size: 16px; }
+  .lb-name { font-size: 15px !important; }
+  .lb-meta { font-size: 13px !important; }
+  .lb-rank { font-size: 18px !important; }
+  .lb-row { padding: 10px 12px !important; }
+  .ob-col-heads, .ob-row { grid-template-columns: 65px 1fr 65px 1fr 16px; }
+  .sys-ov-row { grid-template-columns: 10px 32px 1fr 52px auto; }
+  .toast { bottom: 8px; font-size: 13px; padding: 8px 14px; }
+}
+
+/* Fix touch-action on chips so panels still scroll on swipe */
+@media (hover: none) {
+  .order-chip, .order-row {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y !important; /* was: none — pan-y lets scroll through */
+  }
 }
 
 
@@ -3279,24 +3326,8 @@ function sheetReturn() {
 })();
 
 // Track game header height for game-body absolute layout
-function updateGameBodyHeight() {
-  var hdr = document.querySelector('#screen-game .game-header');
-  var screen = document.getElementById('screen-game');
-  if (hdr && screen) {
-    var h = hdr.offsetHeight;
-    screen.style.setProperty('--game-header-h', h + 'px');
-  }
-}
-window.addEventListener('resize', updateGameBodyHeight);
-
-// Patch startGame
-(function() {
-  var orig = startGame;
-  startGame = function() {
-    orig();
-    setTimeout(function() { updateGameBodyHeight(); }, 120);
-  };
-})();
+// No JS height calc needed — flexbox handles it
+function updateGameBodyHeight() {} // kept as no-op for safety
 
 </script>
 
