@@ -782,27 +782,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .gh-lab { font-size: 9px !important; }
   .timer { font-size: 13px !important; padding: 3px 7px !important; flex-shrink: 0; }
 
-  /* ══ GAME BODY: flex col so map is always at bottom with natural height ══ */
-  .game-body {
-    flex: 1 !important;
-    min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
-  /* Row 1: orders + trucks side by side */
-  .orders-trucks-row {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-  }
-  /* Since orders/trucks are direct children of game-body (no wrapper),
-     use a pseudo-approach: float them in a shared first-row via grid */
+  /* ══ GAME BODY: grid — panels top, map fixed at bottom ══
+     Map: 130px. Leaves ~580-620px on a typical phone for panels.
+     Each order chip ~58px → 3 visible. Each truck card ~120px → 2-3 visible. */
   .game-body {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 200px;
+    grid-template-rows: 1fr 130px;
+    height: calc(100vh - 46px); /* 46px = compact header */
+    overflow: hidden !important;
   }
   .orders-panel {
     display: flex !important;
@@ -811,8 +799,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    touch-action: pan-y !important; /* allow swipe-scroll even over chips */
-    padding: 6px 5px 4px; gap: 4px;
+    touch-action: pan-y !important;
+    padding: 4px 4px 4px; gap: 3px;
     border-right: 1px solid var(--border) !important;
     border-bottom: none !important;
   }
@@ -823,47 +811,58 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding: 6px 5px 0; gap: 4px;
+    padding: 4px 4px 0; gap: 3px;
   }
   .map-panel {
     display: block !important;
     grid-column: 1 / -1; grid-row: 2;
-    position: relative;
-    height: 200px;
+    position: relative; height: 130px;
   }
   #game-map { width: 100%; height: 100%; }
   .mobile-tab-bar { display: none !important; }
 
-  /* ── Orders panel: slightly smaller than trucks ── */
-  .orders-panel .order-chip { font-size: 12px !important; padding: 7px 8px !important; }
-  .orders-panel .chip-store { font-size: 13px !important; }
+  /* ── Orders panel: compact chips, ~58px each → 3 fit without scrolling ── */
+  .orders-panel .pool-topbar { padding: 3px 2px 2px !important; gap: 4px; }
+  .orders-panel .pool-title { font-size: 10px !important; }
+  .orders-panel .pool-badge { font-size: 10px !important; padding: 0 5px !important; }
+  .orders-panel .pool-search { display: none; } /* hidden to save space */
+  .orders-panel .pool-controls { display: none; }
+  .orders-panel .pool-filters { gap: 2px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+  .orders-panel .filter-btn { padding: 2px 5px !important; font-size: 10px !important; flex-shrink: 0; }
+  .orders-panel .order-chip {
+    padding: 5px 7px !important; gap: 3px !important;
+  }
+  .orders-panel .chip-id { font-size: 10px !important; color: var(--text3); }
+  .orders-panel .chip-store { font-size: 13px !important; font-weight: 700; line-height: 1.2; }
   .orders-panel .chip-sub { font-size: 11px !important; }
-  .orders-panel .chip-id { font-size: 10px !important; }
-  .orders-panel .cflag { font-size: 9px !important; padding: 1px 4px !important; }
-  .pool-search { font-size: 12px !important; padding: 5px 7px !important; }
-  .pool-select { font-size: 11px !important; padding: 3px 4px !important; }
-  .pool-filters { gap: 3px; flex-wrap: wrap; }
-  .filter-btn { padding: 3px 6px !important; font-size: 11px !important; }
-  .pool-title { font-size: 10px !important; }
-  .pool-badge { font-size: 11px !important; }
+  .orders-panel .chip-flags { display: none; } /* hide flags to save height */
+  .orders-panel .cflag { display: none !important; }
 
-  /* ── Trucks panel: comfortable sizing ── */
-  .trucks-panel .truck-name { font-size: 13px !important; overflow: hidden;
-                               text-overflow: ellipsis; white-space: nowrap; }
-  .trucks-panel .truck-stats { font-size: 10px !important; }
-  .trucks-panel .truck-miles { font-size: 11px !important; }
-  .trucks-panel .truck-head { padding: 7px 8px !important; gap: 5px; flex-wrap: wrap; }
-  .trucks-panel .cap-label { font-size: 9px !important; min-width: 24px !important; }
-  .trucks-panel .cap-pct { font-size: 9px !important; }
-  .trucks-panel .cap-row { padding: 2px 6px !important; gap: 4px; }
-  .trucks-panel .drop-zone { min-height: 34px; padding: 5px 6px !important; }
-  .trucks-panel .drop-hint { font-size: 11px !important; }
-  .trucks-panel .order-row { font-size: 12px !important; padding: 6px 7px !important; }
-  .trucks-panel .or-store { font-size: 12px !important; }
+  /* ── Trucks panel: slim cards, ~115px each → 2-3 fit ── */
+  .trucks-panel .truck-card { border-radius: 8px !important; }
+  .trucks-panel .truck-head {
+    padding: 5px 7px !important; gap: 4px;
+    flex-wrap: nowrap; align-items: center;
+  }
+  .trucks-panel .truck-name { font-size: 12px !important; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .trucks-panel .truck-stats { font-size: 10px !important; white-space: nowrap; }
+  .trucks-panel .truck-miles { font-size: 10px !important; }
+  .trucks-panel .btn-rm { font-size: 12px !important; padding: 0 !important; }
+  /* Hide cap bars — too cramped, use just the head row */
+  .trucks-panel .cap-row { display: none !important; }
+  /* Compact drop zone */
+  .trucks-panel .drop-zone {
+    min-height: 28px !important; padding: 4px 6px !important;
+    gap: 3px !important;
+  }
+  .trucks-panel .drop-hint { font-size: 10px !important; }
+  .trucks-panel .order-row { font-size: 11px !important; padding: 4px 5px !important; gap: 4px; }
+  .trucks-panel .or-store { font-size: 11px !important; }
   .trucks-panel .or-cases, .trucks-panel .or-weight { font-size: 10px !important; }
-  .trucks-panel .add-truck-btn { padding: 7px !important; font-size: 12px !important; }
-  .trucks-panel .submit-btn { padding: 9px !important; font-size: 13px !important; }
-  .trucks-panel .btn-rm { font-size: 13px !important; }
+  .trucks-panel .btn-mv { font-size: 10px !important; padding: 1px 3px !important; }
+  .trucks-panel .add-truck-btn { padding: 6px !important; font-size: 12px !important; }
+  .trucks-panel .submit-btn { padding: 8px !important; font-size: 13px !important; }
 
   /* Map overlays hidden on small map */
   .miles-overlay { display: none; }
