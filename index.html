@@ -591,23 +591,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .orders-panel{border-right:1px solid var(--border);}
   .gh-stats{gap:10px;}
 }
-@media(max-width:600px){
-  .game-header{flex-wrap:wrap;height:auto;padding:6px 10px;gap:6px;}
-  .gh-brand{font-size:15px;}
-  .gh-player{font-size:13px;}
-  .gh-stats{gap:4px;width:100%;justify-content:space-around;}
-  .gh-val{font-size:16px;}
-  .gh-lab{font-size:11px;}
-  .timer{font-size:16px;padding:4px 9px;}
-  /* (layout handled by mobile CSS additions below) */
-  /* Bigger touch targets on mobile */
-  .order-chip{padding:10px 12px;font-size:15px;}
-  .order-row{padding:9px 10px;font-size:15px;}
-  .filter-btn{padding:5px 10px;font-size:14px;}
-  .add-truck-btn{padding:12px;font-size:16px;}
-  .submit-btn{padding:14px;font-size:16px;}
-  .drop-zone{min-height:60px;}
-}
+/* original 600px block merged into landscape query below */
 
 /* Touch drag ghost element */
 #touch-drag-ghost{
@@ -712,190 +696,182 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .rules-collapse { overflow: hidden; transition: max-height .3s ease; }
 .intro-sticky-footer { display: none; }
 
+/* ── PORTRAIT phones (intro/lb/results scroll) ── */
 @media (max-width: 600px) {
-
-  /* ══ INTRO / LEADERBOARD / RESULTS: position:fixed scroll containers ══
-     body has overflow:hidden globally. Using position:fixed gives each screen
-     its own independent scroll context that always works on iOS/Android. */
   #screen-intro.screen.active,
   #screen-leaderboard.screen.active,
   #screen-results.screen.active {
-    position: fixed !important;
-    inset: 0 !important;
-    height: 100% !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior-y: contain;
+    position: fixed !important; inset: 0 !important; height: 100% !important;
+    overflow-y: auto !important; overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important; overscroll-behavior-y: contain;
   }
-  /* Intro layout */
   #screen-intro.screen.active {
-    padding: 1.25rem 1.1rem 3rem;
-    align-items: flex-start;
-    justify-content: flex-start;
-    flex-direction: column;
+    padding: 1.25rem 1.1rem 3rem; align-items: flex-start;
+    justify-content: flex-start; flex-direction: column;
   }
   .intro-inner { margin: 0 auto; max-width: 100%; width: 100%; }
   .intro-scroll-area { display: contents; }
   .intro-sticky-footer { display: none !important; }
   #intro-name-row-desktop { display: flex !important; margin-bottom: 1rem; }
   #intro-lb-btn-desktop { display: block !important; margin-bottom: 1.5rem; }
-  .logo-mark { font-size: 36px; margin-bottom: .6rem; }
-  .intro-title { font-size: 24px !important; letter-spacing: -1px !important; }
-  .intro-sub { font-size: 14px !important; margin-bottom: .9rem; line-height: 1.6 !important; }
-  .map-badge { font-size: 13px !important; padding: 5px 12px !important; margin-bottom: .9rem; }
+  .logo-mark { font-size: 36px; }
+  .intro-title { font-size: 24px !important; }
+  .intro-sub { font-size: 14px !important; line-height: 1.6 !important; }
+  .map-badge { font-size: 13px !important; }
   .rules-card { margin-bottom: 1rem; padding: 0; overflow: hidden; }
   .rules-card h3 { display: none; }
   .rules-toggle { display: flex; font-size: 15px; padding: 10px 14px; }
   .rules-collapse { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
   .rules-collapse.open { max-height: 4000px; }
   .rules-collapse-inner { padding: 0 12px 12px; }
-  .rule-row { font-size: 14px !important; line-height: 1.55 !important; margin-bottom: 8px; }
-  .rule-pts { font-size: 13px !important; }
-  .name-row { margin-bottom: .75rem; }
+  .rule-row { font-size: 14px !important; line-height: 1.55 !important; }
   .name-row input { font-size: 17px !important; padding: 12px 14px !important; }
   .btn-start { font-size: 17px !important; padding: 12px 20px !important; }
-  .btn-ghost { padding: 6px; font-size: 14px !important; }
+  .btn-ghost { font-size: 14px !important; }
+  #screen-results { padding: .75rem; }
+  .results-top { grid-template-columns: 64px 1fr; gap: .6rem; }
+  .score-circle { width: 64px; height: 64px; }
+  .score-number { font-size: 24px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .diff-columns { grid-template-columns: 1fr; }
+  .mr-orders { grid-template-columns: 1fr; }
+  .mr-orders-col.mr-orders-user { border-left: none; border-top: 1px solid var(--border); }
+  .results-actions { flex-direction: column; }
+  #screen-leaderboard { padding: .75rem; }
+  .lb-wrap { max-width: 100%; }
+}
 
-  /* ══ GAME SCREEN: flexbox so header adapts, no JS variable needed ══ */
+/* ── LANDSCAPE phones: game layout (height ≤500px = phone in landscape) ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Apply same scroll fix for intro/lb/results in landscape too */
+  #screen-intro.screen.active,
+  #screen-leaderboard.screen.active,
+  #screen-results.screen.active {
+    position: fixed !important; inset: 0 !important; height: 100% !important;
+    overflow-y: auto !important; -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+  }
+  #screen-intro.screen.active { padding: 1rem 1rem 2.5rem; flex-direction: column; align-items: flex-start; }
+  .rules-card h3 { display: none; }
+  .rules-toggle { display: flex; }
+  .rules-collapse { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .rules-collapse.open { max-height: 4000px; }
+
+  /* Game screen: flex column, full height */
   #screen-game.screen.active {
-    display: flex !important;
-    flex-direction: column !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    position: relative;
+    display: flex !important; flex-direction: column !important;
+    height: 100vh !important; overflow: hidden !important;
   }
-  .game-header {
-    flex-shrink: 0 !important;
-    height: auto !important;
-    padding: 5px 10px !important;
-    gap: 4px !important;
-    flex-wrap: nowrap !important;   /* single row — all stats visible */
-  }
-  .gh-brand { display: none; }     /* hide brand to save space */
-  .gh-player { font-size: 11px !important; padding: 2px 6px; max-width: 80px;
-               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .gh-stats { gap: 0 !important; flex: 1 !important; justify-content: space-around !important;
-              order: 0 !important; flex-wrap: nowrap !important; }
-  .gh-stat { min-width: 0; }
-  .gh-val { font-size: 13px !important; line-height: 1.1; }
-  .gh-lab { font-size: 9px !important; }
-  .timer { font-size: 13px !important; padding: 3px 7px !important; flex-shrink: 0; }
 
-  /* ══ GAME BODY: grid — panels top, map fixed at bottom ══
-     Map: 130px. Leaves ~580-620px on a typical phone for panels.
-     Each order chip ~58px → 3 visible. Each truck card ~120px → 2-3 visible. */
+  /* Header: 30px, single row, no wrapping */
+  .game-header {
+    flex-shrink: 0 !important; height: 30px !important; min-height: 30px !important;
+    padding: 0 8px !important; gap: 8px !important;
+    flex-wrap: nowrap !important; align-items: center !important;
+    overflow: hidden;
+  }
+  .gh-brand { display: none !important; }
+  .gh-player {
+    font-size: 10px !important; padding: 1px 5px !important;
+    max-width: 65px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0;
+  }
+  .gh-stats {
+    flex: 1 !important; gap: 0 !important; justify-content: space-around !important;
+    flex-wrap: nowrap !important; order: 0 !important;
+  }
+  .gh-val { font-size: 11px !important; font-weight: 700; line-height: 1; }
+  .gh-lab { font-size: 8px !important; }
+  .timer { font-size: 11px !important; padding: 1px 6px !important; flex-shrink: 0; }
+
+  /* Game body grid: orders | trucks | map-strip on right */
+  /* In landscape we have wide width (~667px+) — put map as right column */
   .game-body {
+    flex: 1 !important; min-height: 0 !important;
     display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 130px;
-    height: calc(100vh - 46px); /* 46px = compact header */
+    grid-template-columns: 1fr 1.1fr 90px;
+    grid-template-rows: 1fr;
     overflow: hidden !important;
   }
   .orders-panel {
     display: flex !important;
     grid-column: 1; grid-row: 1;
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
+    overflow-y: auto !important; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
     touch-action: pan-y !important;
-    padding: 4px 4px 4px; gap: 3px;
+    flex-direction: column; padding: 3px 3px; gap: 2px;
     border-right: 1px solid var(--border) !important;
     border-bottom: none !important;
   }
   .trucks-panel {
     display: flex !important;
     grid-column: 2; grid-row: 1;
-    overflow-y: auto !important;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    padding: 4px 4px 0; gap: 3px;
+    overflow-y: auto !important; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+    flex-direction: column; padding: 3px 3px; gap: 2px;
+    border-right: 1px solid var(--border) !important;
   }
+  /* Map as narrow right column — full height, zoomed out */
   .map-panel {
     display: block !important;
-    grid-column: 1 / -1; grid-row: 2;
-    position: relative; height: 130px;
+    grid-column: 3; grid-row: 1;
+    position: relative; height: 100%;
   }
   #game-map { width: 100%; height: 100%; }
   .mobile-tab-bar { display: none !important; }
+  .miles-overlay { display: none !important; }
+  .legend-overlay { display: none !important; }
+  .dist-note { display: none !important; }
+  .toast { bottom: 6px; font-size: 11px; padding: 5px 10px; }
 
-  /* ── Orders panel: compact chips, ~58px each → 3 fit without scrolling ── */
-  .orders-panel .pool-topbar { padding: 3px 2px 2px !important; gap: 4px; }
-  .orders-panel .pool-title { font-size: 10px !important; }
-  .orders-panel .pool-badge { font-size: 10px !important; padding: 0 5px !important; }
-  .orders-panel .pool-search { display: none; } /* hidden to save space */
-  .orders-panel .pool-controls { display: none; }
-  .orders-panel .pool-filters { gap: 2px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
-  .orders-panel .filter-btn { padding: 2px 5px !important; font-size: 10px !important; flex-shrink: 0; }
-  .orders-panel .order-chip {
-    padding: 5px 7px !important; gap: 3px !important;
+  /* Orders: single-line chips ~28px → 6-8 visible */
+  .orders-panel .pool-topbar { padding: 1px 3px !important; flex-shrink: 0; }
+  .orders-panel .pool-title { font-size: 9px !important; }
+  .orders-panel .pool-badge { font-size: 9px !important; padding: 0 4px !important; }
+  .orders-panel .pool-search { display: none !important; }
+  .orders-panel .pool-controls { display: none !important; }
+  .orders-panel .pool-filters {
+    flex-shrink: 0; display: flex; gap: 2px; flex-wrap: nowrap;
+    overflow-x: auto; padding: 1px 0 2px; scrollbar-width: none;
   }
-  .orders-panel .chip-id { font-size: 10px !important; color: var(--text3); }
-  .orders-panel .chip-store { font-size: 13px !important; font-weight: 700; line-height: 1.2; }
-  .orders-panel .chip-sub { font-size: 11px !important; }
-  .orders-panel .chip-flags { display: none; } /* hide flags to save height */
-  .orders-panel .cflag { display: none !important; }
-
-  /* ── Trucks panel: slim cards, ~115px each → 2-3 fit ── */
-  .trucks-panel .truck-card { border-radius: 8px !important; }
-  .trucks-panel .truck-head {
-    padding: 5px 7px !important; gap: 4px;
-    flex-wrap: nowrap; align-items: center;
+  .orders-panel .pool-filters::-webkit-scrollbar { display: none; }
+  .orders-panel .filter-btn { padding: 1px 4px !important; font-size: 9px !important; flex-shrink: 0; }
+  /* Single-line chip row */
+  .order-chip {
+    padding: 3px 5px !important; gap: 5px !important;
+    flex-direction: row !important; align-items: center !important;
+    flex-wrap: nowrap !important; flex-shrink: 0; min-height: 0 !important;
   }
-  .trucks-panel .truck-name { font-size: 12px !important; font-weight: 700;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-  .trucks-panel .truck-stats { font-size: 10px !important; white-space: nowrap; }
-  .trucks-panel .truck-miles { font-size: 10px !important; }
-  .trucks-panel .btn-rm { font-size: 12px !important; padding: 0 !important; }
-  /* Hide cap bars — too cramped, use just the head row */
-  .trucks-panel .cap-row { display: none !important; }
-  /* Compact drop zone */
-  .trucks-panel .drop-zone {
-    min-height: 28px !important; padding: 4px 6px !important;
-    gap: 3px !important;
+  .chip-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 5px; }
+  .chip-id { font-size: 9px !important; white-space: nowrap; flex-shrink: 0; }
+  .chip-store {
+    font-size: 11px !important; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
   }
-  .trucks-panel .drop-hint { font-size: 10px !important; }
-  .trucks-panel .order-row { font-size: 11px !important; padding: 4px 5px !important; gap: 4px; }
-  .trucks-panel .or-store { font-size: 11px !important; }
-  .trucks-panel .or-cases, .trucks-panel .or-weight { font-size: 10px !important; }
-  .trucks-panel .btn-mv { font-size: 10px !important; padding: 1px 3px !important; }
-  .trucks-panel .add-truck-btn { padding: 6px !important; font-size: 12px !important; }
-  .trucks-panel .submit-btn { padding: 8px !important; font-size: 13px !important; }
+  .chip-sub { font-size: 9px !important; white-space: nowrap; flex-shrink: 0; }
+  .chip-flags { display: none !important; }
 
-  /* Map overlays hidden on small map */
-  .miles-overlay { display: none; }
-  .legend-overlay { display: none; }
-  .dist-note { display: none; }
-
-  /* Results & leaderboard */
-  #screen-results { padding: 1rem; }
-  .results-top { grid-template-columns: 72px 1fr; gap: .75rem; }
-  .score-circle { width: 72px; height: 72px; }
-  .score-number { font-size: 26px; }
-  .results-info h1 { font-size: 19px; }
-  .compare-grid { grid-template-columns: 1fr; }
-  .analysis-section > div:first-child { grid-template-columns: 1fr !important; }
-  .diff-columns { grid-template-columns: 1fr; }
-  .mr-orders { grid-template-columns: 1fr; }
-  .mr-orders-col.mr-orders-user { border-left: none; border-top: 1px solid var(--border); }
-  .oc-table { font-size: 11px; }
-  .oc-table th, .oc-table td { padding: 4px 5px; }
-  .results-actions { flex-direction: column; }
-  #screen-leaderboard { padding: 1rem; }
-  .lb-wrap { max-width: 100%; }
-  .lb-header h1 { font-size: 20px; }
-  .lb-score { font-size: 16px; }
-  .lb-name { font-size: 15px !important; }
-  .lb-meta { font-size: 13px !important; }
-  .lb-rank { font-size: 18px !important; }
-  .lb-row { padding: 10px 12px !important; }
-  .ob-col-heads, .ob-row { grid-template-columns: 65px 1fr 65px 1fr 16px; }
-  .sys-ov-row { grid-template-columns: 10px 32px 1fr 52px auto; }
-  .toast { bottom: 8px; font-size: 13px; padding: 8px 14px; }
+  /* Trucks: slim cards ~70px → 4+ visible */
+  .truck-card { border-radius: 6px !important; }
+  .truck-head {
+    padding: 3px 5px !important; gap: 3px; flex-wrap: nowrap; align-items: center; flex-shrink: 0;
+  }
+  .truck-name {
+    font-size: 11px !important; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  }
+  .truck-stats { font-size: 8px !important; white-space: nowrap; }
+  .truck-miles { font-size: 8px !important; white-space: nowrap; }
+  .btn-rm { font-size: 10px !important; }
+  .cap-row { display: none !important; }
+  .drop-zone { min-height: 18px !important; padding: 2px 4px !important; gap: 1px !important; }
+  .drop-hint { font-size: 9px !important; }
+  .order-row { padding: 2px 3px !important; font-size: 9px !important; flex-shrink: 0; }
+  .or-store { font-size: 9px !important; }
+  .or-cases, .or-weight { font-size: 8px !important; }
+  .btn-mv { font-size: 8px !important; }
+  .add-truck-btn { padding: 4px !important; font-size: 10px !important; flex-shrink: 0; }
+  .submit-btn { padding: 6px !important; font-size: 11px !important; flex-shrink: 0; }
 }
-
 /* Fix touch-action on chips so panels still scroll on swipe */
 @media (hover: none) {
   .order-chip, .order-row {
@@ -1419,7 +1395,7 @@ function initMap() {
     return;
   }
 
-  map = L.map('game-map', { center:[38.05,-122.2], zoom:9, zoomControl:true });
+  map = L.map('game-map', { center:[38.05,-122.2], zoom: window.innerHeight <= 500 ? 7 : 9, zoomControl:false });
 
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
     attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
