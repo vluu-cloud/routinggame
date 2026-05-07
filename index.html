@@ -788,7 +788,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .game-body {
     flex: 1 !important; min-height: 0 !important;
     display: grid !important;
-    grid-template-columns: 0.55fr 1.1fr 0.75fr;
+    grid-template-columns: 0.55fr 1.05fr 0.95fr;
     grid-template-rows: 1fr;
     overflow: hidden !important;
   }
@@ -3208,29 +3208,42 @@ if (screen.orientation && screen.orientation.lock) {
 }
 
 // ── Back button / swipe-back confirmation ────────────────────────
-var gameActive = false; // set true when game starts, false on submit/results
+var gameActive = false;
+var _confirmingBack = false;
 
-function setGameActive(val) { gameActive = val; }
+function setGameActive(val) {
+  gameActive = val;
+  if (val) {
+    // Push a deep stack so many back-presses are needed to break out
+    for (var i = 0; i < 10; i++) {
+      history.pushState({ page: 'game', depth: i }, '');
+    }
+  }
+}
 
-// Push a history state so the back button hits us first
-history.pushState({ page: 'app' }, '');
 window.addEventListener('popstate', function(e) {
-  if (gameActive) {
+  if (!gameActive) return;
+  if (_confirmingBack) return;
+  _confirmingBack = true;
+
+  // Re-fill the history stack immediately so rapid presses don't escape
+  for (var i = 0; i < 5; i++) {
+    history.pushState({ page: 'game', depth: i }, '');
+  }
+
+  // Use setTimeout so the stack push completes before the dialog blocks
+  setTimeout(function() {
     var leave = confirm('Leave game? Your progress will be lost.');
+    _confirmingBack = false;
     if (leave) {
       gameActive = false;
       showScreen('screen-intro');
-    } else {
-      // Re-push so back still works next time
-      history.pushState({ page: 'app' }, '');
     }
-  } else {
-    // Not in game — push state back and let normal nav happen if desired
-    history.pushState({ page: 'app' }, '');
-  }
+    // If cancel: stack already refilled above, guard stays active
+  }, 0);
 });
 
-// Also guard browser beforeunload (desktop refresh/close)
+// Guard desktop refresh/close too
 window.addEventListener('beforeunload', function(e) {
   if (gameActive) {
     e.preventDefault();
