@@ -966,7 +966,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="intro-scroll-area">
     <div class="logo-mark">🗺️</div>
     <h1 class="intro-title">Route Builder <em>Challenge</em></h1>
-    <p class="intro-sub">Build real delivery routes for 26 orders across the Bay Area. Routes are plotted live on a map — geographic clustering is the key to minimizing miles.</p>
+    <p class="intro-sub">Build real delivery routes for 25 orders across the Bay Area. Routes are plotted live on a map — geographic clustering is the key to minimizing miles.</p>
     <div class="map-badge">📍 Real GPS distances · Bay Area stores</div>
     <div class="rules-card">
       <h3>How scoring works</h3>
@@ -1038,7 +1038,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <span class="gh-player" id="gh-player">Player</span>
     <div class="gh-stats">
       <div class="gh-stat">
-        <div class="gh-val" id="stat-assigned">0/26</div>
+        <div class="gh-val" id="stat-assigned">0/25</div>
         <div class="gh-lab">Assigned</div>
       </div>
       <div class="gh-stat">
@@ -1063,7 +1063,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <div class="orders-panel tab-active" id="tab-orders">
       <div class="pool-topbar">
         <span class="pool-title">Orders</span>
-        <span class="pool-badge" id="pool-badge">26</span>
+        <span class="pool-badge" id="pool-badge">25</span>
       </div>
       <input class="pool-search" id="pool-search" type="text" placeholder="🔍 Search store or ID…" oninput="poolSearch=this.value;renderPool()">
       <div class="pool-controls">
@@ -3207,48 +3207,81 @@ if (screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('landscape').catch(function(){});
 }
 
-// ── Back button / swipe-back confirmation ────────────────────────
+// ── Back button / swipe-back confirmation (custom modal) ─────────
 var gameActive = false;
-var _confirmingBack = false;
+var _backGuardShowing = false;
+
+var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 function setGameActive(val) {
   gameActive = val;
   if (val) {
-    // Push a deep stack so many back-presses are needed to break out
-    for (var i = 0; i < 10; i++) {
+    if (_isIOS) {
+      // iOS Safari ignores popstate interception for swipe-back.
+      // Replace history so the page itself IS the back destination —
+      // swiping back just reloads the same page (which shows intro).
+      // We catch that via pageshow with persisted=true.
+      history.replaceState({ page: 'game' }, '', '#game');
+      // Push extra states as buffer for the back button tap (not swipe)
+      for (var i = 0; i < 5; i++) {
+        history.pushState({ page: 'game', depth: i }, '', '#game');
+      }
+    } else {
+      for (var i = 0; i < 20; i++) {
+        history.pushState({ page: 'game', depth: i }, '');
+      }
+    }
+  }
+}
+
+function _refillStack() {
+  if (_isIOS) {
+    for (var i = 0; i < 5; i++) {
+      history.pushState({ page: 'game', depth: i }, '', '#game');
+    }
+  } else {
+    for (var i = 0; i < 20; i++) {
       history.pushState({ page: 'game', depth: i }, '');
     }
   }
 }
 
-window.addEventListener('popstate', function(e) {
-  if (!gameActive) return;
-  if (_confirmingBack) return;
-  _confirmingBack = true;
-
-  // Re-fill the history stack immediately so rapid presses don't escape
-  for (var i = 0; i < 5; i++) {
-    history.pushState({ page: 'game', depth: i }, '');
+// iOS: if user navigated away and came back via bfcache, show guard
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted && gameActive) {
+    // Page restored from back-forward cache — show the leave guard
+    document.getElementById('back-guard-overlay').style.display = 'flex';
+    _backGuardShowing = true;
+    _refillStack();
   }
-
-  // Use setTimeout so the stack push completes before the dialog blocks
-  setTimeout(function() {
-    var leave = confirm('Leave game? Your progress will be lost.');
-    _confirmingBack = false;
-    if (leave) {
-      gameActive = false;
-      showScreen('screen-intro');
-    }
-    // If cancel: stack already refilled above, guard stays active
-  }, 0);
 });
 
-// Guard desktop refresh/close too
+function backGuardCancel() {
+  // Refill stack and hide modal — user stays in game
+  _refillStack();
+  document.getElementById('back-guard-overlay').style.display = 'none';
+  _backGuardShowing = false;
+}
+
+function backGuardLeave() {
+  gameActive = false;
+  _backGuardShowing = false;
+  document.getElementById('back-guard-overlay').style.display = 'none';
+  showScreen('screen-intro');
+}
+
+window.addEventListener('popstate', function() {
+  if (!gameActive) return;
+  // Always refill stack first so rapid presses can never drain it
+  _refillStack();
+  if (_backGuardShowing) return;
+  _backGuardShowing = true;
+  document.getElementById('back-guard-overlay').style.display = 'flex';
+});
+
+// Desktop: guard refresh/tab close
 window.addEventListener('beforeunload', function(e) {
-  if (gameActive) {
-    e.preventDefault();
-    e.returnValue = '';
-  }
+  if (gameActive) { e.preventDefault(); e.returnValue = ''; }
 });
 
 var activeTab = 'orders';
@@ -3397,6 +3430,36 @@ function updateGameBodyHeight() {} // kept as no-op for safety
     <div class="sheet-sub" id="sheet-sub"></div>
   </div>
   <div class="sheet-body" id="sheet-body"></div>
+</div>
+
+<!-- ── BACK BUTTON GUARD MODAL ── -->
+<div id="back-guard-overlay" style="
+  display:none; position:fixed; inset:0; z-index:99999;
+  background:rgba(0,0,0,0.7); align-items:center; justify-content:center;
+">
+  <div style="
+    background:var(--bg2); border:1px solid var(--border2);
+    border-radius:16px; padding:28px 28px 24px; max-width:360px; width:90%;
+    text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5);
+  ">
+    <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
+    <div style="font-size:20px; font-weight:700; color:var(--text); margin-bottom:8px;">Leave game?</div>
+    <div style="font-size:15px; color:var(--text2); margin-bottom:24px; line-height:1.5;">
+      Your progress will be lost.<br>This cannot be undone.
+    </div>
+    <div style="display:flex; gap:12px;">
+      <button onclick="backGuardCancel()" style="
+        flex:1; padding:13px; background:var(--bg3); border:1px solid var(--border2);
+        border-radius:10px; font-family:var(--font); font-size:16px;
+        font-weight:700; color:var(--text); cursor:pointer;
+      ">Stay</button>
+      <button onclick="backGuardLeave()" style="
+        flex:1; padding:13px; background:var(--red); border:none;
+        border-radius:10px; font-family:var(--font); font-size:16px;
+        font-weight:700; color:#fff; cursor:pointer;
+      ">Leave</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
