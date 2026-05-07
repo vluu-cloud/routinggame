@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Route Builder Challenge</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,7 @@
   --mono:  'DM Mono', monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh;overflow:hidden;touch-action:none;-ms-touch-action:none;}
 
 /* ── SCREENS ── */
 .screen{display:none;height:100vh;flex-direction:column;}
@@ -824,11 +824,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .legend-overlay { display: none !important; }
   .dist-note { display: none !important; }
   .toast { bottom: 6px; font-size: 11px; padding: 5px 10px; }
-  /* Lock page-level scroll; only panels and map scroll */
-  body, html { overflow: hidden !important; touch-action: none; }
-  /* Re-enable touch interactions in scroll panels */
+  /* Lock page-level scroll and zoom */
+  body, html { overflow: hidden !important; touch-action: none !important; }
+  /* Scroll panels: vertical swipe only */
   .orders-panel, .trucks-panel { touch-action: pan-y !important; }
-  #game-map { touch-action: pinch-zoom pan-x pan-y !important; }
+  /* Map: allow pan + pinch-zoom */
+  #game-map { touch-action: pan-x pan-y pinch-zoom !important; }
 
   /* Orders: single-line chips ~28px → 6-8 visible */
   .orders-panel .pool-topbar { padding: 1px 3px !important; flex-shrink: 0; }
@@ -953,6 +954,15 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .metric-row { font-size: 17px !important; }
 .mc-num { font-size: 34px !important; }
 .mc-label { font-size: 15px !important; }
+
+
+/* iOS: prevent input zoom — font-size must be ≥16px on focus */
+@media (max-width: 600px), (max-height: 500px) and (orientation: landscape) {
+  input, select, textarea {
+    font-size: 16px !important;
+    transform: none !important;
+  }
+}
 
 </style>
 </head>
