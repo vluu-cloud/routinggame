@@ -788,7 +788,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .game-body {
     flex: 1 !important; min-height: 0 !important;
     display: grid !important;
-    grid-template-columns: 1fr 1.1fr 90px;
+    grid-template-columns: 1fr 1.1fr 140px;
     grid-template-rows: 1fr;
     overflow: hidden !important;
   }
@@ -827,14 +827,20 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .orders-panel .pool-topbar { padding: 1px 3px !important; flex-shrink: 0; }
   .orders-panel .pool-title { font-size: 9px !important; }
   .orders-panel .pool-badge { font-size: 9px !important; padding: 0 4px !important; }
-  .orders-panel .pool-search { display: none !important; }
-  .orders-panel .pool-controls { display: none !important; }
+  .orders-panel .pool-search {
+    display: block !important; font-size: 10px !important;
+    padding: 3px 6px !important; flex-shrink: 0;
+  }
+  .orders-panel .pool-controls {
+    display: flex !important; gap: 3px; flex-shrink: 0;
+  }
+  .orders-panel .pool-select { font-size: 9px !important; padding: 2px 3px !important; }
   .orders-panel .pool-filters {
     flex-shrink: 0; display: flex; gap: 2px; flex-wrap: nowrap;
     overflow-x: auto; padding: 1px 0 2px; scrollbar-width: none;
   }
   .orders-panel .pool-filters::-webkit-scrollbar { display: none; }
-  .orders-panel .filter-btn { padding: 1px 4px !important; font-size: 9px !important; flex-shrink: 0; }
+  .orders-panel .filter-btn { padding: 1px 5px !important; font-size: 9px !important; flex-shrink: 0; }
   /* Single-line chip row */
   .order-chip {
     padding: 3px 5px !important; gap: 5px !important;
