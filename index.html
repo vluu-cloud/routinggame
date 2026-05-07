@@ -717,9 +717,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   /* ══ INTRO / LEADERBOARD / RESULTS: position:fixed scroll containers ══
      body has overflow:hidden globally. Using position:fixed gives each screen
      its own independent scroll context that always works on iOS/Android. */
-  #screen-intro.screen,
-  #screen-leaderboard.screen,
-  #screen-results.screen {
+  #screen-intro.screen.active,
+  #screen-leaderboard.screen.active,
+  #screen-results.screen.active {
     position: fixed !important;
     inset: 0 !important;
     height: 100% !important;
@@ -729,7 +729,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     overscroll-behavior-y: contain;
   }
   /* Intro layout */
-  #screen-intro.screen {
+  #screen-intro.screen.active {
     padding: 1.25rem 1.1rem 3rem;
     align-items: flex-start;
     justify-content: flex-start;
@@ -758,7 +758,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .btn-ghost { padding: 6px; font-size: 14px !important; }
 
   /* ══ GAME SCREEN: flexbox so header adapts, no JS variable needed ══ */
-  #screen-game.screen {
+  #screen-game.screen.active {
     display: flex !important;
     flex-direction: column !important;
     height: 100vh !important;
