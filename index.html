@@ -876,7 +876,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .truck-stats { font-size: 8px !important; white-space: normal; word-break: break-word; }
   .truck-miles { font-size: 8px !important; white-space: normal; }
   .btn-rm { font-size: 10px !important; }
-  .cap-row { display: none !important; }
+  .cap-row {
+    display: flex !important;
+    padding: 1px 5px !important;
+    gap: 3px !important;
+  }
+  .cap-label { font-size: 8px !important; min-width: 22px !important; }
+  .cap-pct { font-size: 8px !important; }
+  .cap-bar { height: 3px !important; }
   .drop-zone { min-height: 18px !important; padding: 2px 4px !important; gap: 1px !important; }
   .drop-hint { font-size: 9px !important; }
   .order-row { padding: 2px 3px !important; font-size: 9px !important; flex-shrink: 0; }
