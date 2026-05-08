@@ -1815,6 +1815,14 @@ function saveToLeaderboard(r) {
   const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
   const matchPct = r.sb && r.sb.routematch
     ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
+  // Format timestamp as Pacific time (handles PDT/PST automatically)
+  const pdtStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: true, timeZoneName: 'short'
+  }).format(new Date(r.timestamp));
+
   const payload = {
     player:     r.playerName,
     score:      r.totalScore,
@@ -1823,14 +1831,9 @@ function saveToLeaderboard(r) {
     trucks:     r.numTrucks,
     routeMatch: matchPct,
     time:       formatTime(r.elapsedSeconds),
-    orders:     trucks.reduce(function(sum, t){ return sum + t.orders.length; }, 0),
     routes:     routeSummary,
-    timestamp:  new Date(r.timestamp).toLocaleString('en-US', {
-      timeZone: 'America/Los_Angeles',
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-      hour12: true
-    }) + ' PDT'
+    orders:     r.assignedCount,
+    timestamp:  pdtStr
   };
   console.log('Sending to Sheets:', payload);
   fetch(SHEETS_URL, {
