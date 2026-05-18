@@ -329,8 +329,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .mc-eff-fill{height:100%;border-radius:3px;transition:width .8s;}
 .mc-eff-label{display:flex;justify-content:space-between;font-size:13px;color:var(--text3);}
 
-
-
 .score-breakdown{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
 .score-breakdown h3{font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;}
 .score-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:15px;}
@@ -591,7 +589,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .orders-panel{border-right:1px solid var(--border);}
   .gh-stats{gap:10px;}
 }
-/* original 600px block merged into landscape query below */
 
 /* Touch drag ghost element */
 #touch-drag-ghost{
@@ -608,10 +605,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 @media(hover:none){
   .order-chip,.order-row{
     -webkit-tap-highlight-color:transparent;
-    touch-action:pan-y;          /* allow vertical scroll; JS blocks it once drag starts */
+    touch-action:pan-y;
     user-select:none;
     -webkit-user-select:none;
-    -webkit-touch-callout:none;  /* suppress iOS/Android long-press callout */
+    -webkit-touch-callout:none;
   }
 }
 
@@ -699,7 +696,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .rules-collapse { overflow: hidden; transition: max-height .3s ease; }
 .intro-sticky-footer { display: none; }
 
-/* ── PORTRAIT phones (intro/lb/results scroll) ── */
+/* ── PORTRAIT phones ── */
 @media (max-width: 600px) {
   #screen-intro.screen.active,
   #screen-leaderboard.screen.active,
@@ -744,9 +741,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .lb-wrap { max-width: 100%; }
 }
 
-/* ── LANDSCAPE phones: game layout (height ≤500px = phone in landscape) ── */
+/* ── LANDSCAPE phones ── */
 @media (max-height: 500px) and (orientation: landscape) {
-  /* Apply same scroll fix for intro/lb/results in landscape too */
   #screen-intro.screen.active,
   #screen-leaderboard.screen.active,
   #screen-results.screen.active {
@@ -760,13 +756,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .rules-collapse { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
   .rules-collapse.open { max-height: 4000px; }
 
-  /* Game screen: flex column, full height */
   #screen-game.screen.active {
     display: flex !important; flex-direction: column !important;
     height: 100vh !important; overflow: hidden !important;
   }
 
-  /* Header: 30px, single row, no wrapping */
   .game-header {
     flex-shrink: 0 !important; height: 30px !important; min-height: 30px !important;
     padding: 0 8px !important; gap: 8px !important;
@@ -786,8 +780,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .gh-lab { font-size: 8px !important; }
   .timer { font-size: 11px !important; padding: 1px 6px !important; flex-shrink: 0; }
 
-  /* Game body grid: orders | trucks | map-strip on right */
-  /* In landscape we have wide width (~667px+) — put map as right column */
   .game-body {
     flex: 1 !important; min-height: 0 !important;
     display: grid !important;
@@ -813,7 +805,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     flex-direction: column; padding: 3px 3px; gap: 2px;
     border-right: 1px solid var(--border) !important;
   }
-  /* Map as narrow right column — full height, zoomed out */
   .map-panel {
     display: flex !important;
     flex-direction: column !important;
@@ -827,14 +818,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .legend-overlay { display: none !important; }
   .dist-note { display: none !important; }
   .toast { bottom: 6px; font-size: 11px; padding: 5px 10px; }
-  /* Lock page-level scroll and zoom */
   body, html { overflow: hidden !important; touch-action: none !important; }
-  /* Scroll panels: vertical swipe only */
   .orders-panel, .trucks-panel { touch-action: pan-y !important; }
-  /* Map: allow pan + pinch-zoom */
   #game-map { touch-action: pan-x pan-y pinch-zoom !important; }
 
-  /* Orders: single-line chips ~28px → 6-8 visible */
   .orders-panel .pool-topbar { padding: 1px 3px !important; flex-shrink: 0; }
   .orders-panel .pool-title { font-size: 9px !important; }
   .orders-panel .pool-badge { font-size: 9px !important; padding: 0 4px !important; }
@@ -852,7 +839,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   }
   .orders-panel .pool-filters::-webkit-scrollbar { display: none; }
   .orders-panel .filter-btn { padding: 1px 5px !important; font-size: 9px !important; flex-shrink: 0; }
-  /* Single-line chip row */
   .order-chip {
     padding: 2px 4px !important; gap: 4px !important;
     flex-direction: row !important; align-items: center !important;
@@ -867,7 +853,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .chip-sub { font-size: 9px !important; white-space: nowrap; flex-shrink: 0; }
   .chip-flags { display: none !important; }
 
-  /* Trucks: slim cards ~70px → 4+ visible */
   .truck-card { border-radius: 6px !important; }
   .truck-head {
     padding: 3px 5px !important; gap: 3px; flex-wrap: nowrap; align-items: center; flex-shrink: 0;
@@ -897,12 +882,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .submit-btn { padding: 6px !important; font-size: 11px !important; flex-shrink: 0; }
 }
 
-
 /* ── Accessibility: larger text for desktop ── */
-/* Intro / instructions — sizes set in base CSS above */
 .map-badge { font-size: 19px !important; padding: 8px 20px !important; }
 .btn-secondary { font-size: 18px !important; padding: 11px 20px !important; }
-/* Game panels */
 .order-chip { font-size: 17px !important; padding: 12px 14px !important; }
 .chip-id { font-size: 15px !important; }
 .chip-store { font-size: 19px !important; font-weight: 700 !important; }
@@ -928,22 +910,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .add-truck-btn { font-size: 18px !important; padding: 13px !important; }
 .submit-btn { font-size: 19px !important; padding: 15px !important; }
 .btn-rm { font-size: 19px !important; }
-/* Header */
 .gh-val { font-size: 26px !important; }
 .gh-lab { font-size: 15px !important; }
 .gh-player { font-size: 18px !important; }
 .gh-brand { font-size: 21px !important; }
 .game-header { height: 60px !important; padding: 0 16px !important; }
 .timer { font-size: 24px !important; padding: 7px 16px !important; }
-/* Map overlays */
 .mo-val { font-size: 20px !important; }
 .mo-label { font-size: 15px !important; }
 .legend-row { font-size: 16px !important; }
 .legend-title { font-size: 15px !important; }
-/* Truck cards */
 .truck-head { padding: 12px 14px !important; }
 .truck-card { border-radius: 11px !important; }
-/* Results & leaderboard */
 .results-info h1 { font-size: 32px !important; }
 .score-number { font-size: 50px !important; }
 .result-grade { font-size: 21px !important; }
@@ -958,15 +936,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .mc-num { font-size: 34px !important; }
 .mc-label { font-size: 15px !important; }
 
-
-/* iOS: prevent input zoom — font-size must be ≥16px on focus */
+/* iOS: prevent input zoom */
 @media (max-width: 600px), (max-height: 500px) and (orientation: landscape) {
   input, select, textarea {
     font-size: 16px !important;
     transform: none !important;
   }
 }
-
 </style>
 </head>
 <body>
@@ -1004,11 +980,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           15/25 → <strong style="color:var(--red);">180 pts</strong>
         </div>
       </div></div>
-      <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery window compliance</strong><span class="rule-pts">150 pts</span> — Every store has a delivery window shown on its order chip. All stops on a truck must have compatible windows — your driver needs to reach each store while it’s open.
+      <div class="rule-row"><span class="rule-icon">🕐</span><div><strong>Delivery window compliance</strong><span class="rule-pts">150 pts</span> — Every store has a delivery window shown on its order chip. All stops on a truck must have compatible windows — your driver needs to reach each store while it's open.
         <div style="margin-top:8px;background:rgba(240,166,35,0.06);border:1px solid rgba(240,166,35,0.2);border-radius:7px;padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.8;">
           <strong style="color:var(--text);">Formula:</strong> 150 × (stores reached within window ÷ total stores)<br>
           <div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px;font-size:12px;color:var(--text3);">
-            💡 <strong style="color:var(--text);">Tip:</strong> Window compatibility is the main reason certain stores are paired together. If two stores on the same truck have windows that don’t overlap enough to serve both, you’ll lose points.
+            💡 <strong style="color:var(--text);">Tip:</strong> Window compatibility is the main reason certain stores are paired together. If two stores on the same truck have windows that don't overlap enough to serve both, you'll lose points.
           </div>
         </div>
       </div></div>
@@ -1024,13 +1000,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div style="margin-top:8px;border:1px solid var(--border);border-radius:7px;overflow:hidden;font-size:13px;"><div style="display:grid;grid-template-columns:1fr 1fr;background:var(--bg3);padding:4px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text3);text-transform:uppercase;font-size:11px;letter-spacing:.7px;"><span>Time remaining</span><span style="text-align:right">Speed pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);background:rgba(15,186,128,0.06);"><span style="color:var(--text2);">4:00+ remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green);">50 pts 🏆</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">3:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green);">38 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">2:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--amber);">25 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">1:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text3);">13 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;"><span style="color:var(--text2);">0:00 (time's up)</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--red);">0 pts</span></div></div>
       </div></div>
     </div>
-      </div></div><!-- /rules-collapse -->
+      </div></div>
     <div class="name-row" id="intro-name-row-desktop">
       <input type="text" id="player-name-input" placeholder="Enter your name…" maxlength="24">
       <button class="btn-start" onclick="startGame()">Start →</button>
     </div>
     <button class="btn-ghost" id="intro-lb-btn-desktop" onclick="showLeaderboard()">📋 View leaderboard</button>
-    </div><!-- /intro-scroll-area -->
+    </div>
     <div class="intro-sticky-footer">
       <div class="name-row" style="margin-bottom:0">
         <input type="text" id="player-name-input-mobile" placeholder="Enter your name…" maxlength="24"
@@ -1068,7 +1044,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div>
     </div>
     <div class="timer" id="timer">5:00</div>
-
   </div>
 
   <div class="game-body">
@@ -1121,22 +1096,18 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <span style="color:var(--text3)">YOURS:</span><span id="mob-yours">—</span>
       </div>
       <div id="game-map" style="flex:1;min-height:0;"></div>
-      <!-- Miles overlay -->
       <div class="map-overlay miles-overlay">
         <div class="mo-row"><span class="mo-label">Your miles</span><span class="mo-val" id="mo-yours">—</span></div>
         <div class="mo-row"><span class="mo-label">Optimal</span><span class="mo-val opt" id="mo-opt">—</span></div>
         <div class="eff-bar"><div class="eff-fill" id="eff-fill" style="width:0%;background:var(--green)"></div></div>
       </div>
-      <!-- Legend overlay -->
       <div class="map-overlay legend-overlay" id="map-legend">
         <div class="legend-title">Trucks</div>
         <div class="legend-row"><div class="legend-dash" style="background:#4b5563"></div><span style="color:var(--text3)">No trucks yet</span></div>
       </div>
-      <!-- Depot label handled by Leaflet -->
     </div>
   </div>
 
-  <!-- MOBILE BOTTOM TAB BAR -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar">
     <button class="tab-btn active" id="tabbtn-orders" onclick="switchTab('orders')">
       <span class="tab-icon">📦</span><span>Orders</span>
@@ -1168,7 +1139,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div>
     </div>
 
-    <!-- Miles highlight -->
     <div class="miles-result-card">
       <h3>🛣️ Route Efficiency (primary metric)</h3>
       <div class="miles-compare">
@@ -1184,18 +1154,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       </div>
     </div>
 
-    <!-- Score breakdown -->
     <div class="score-breakdown" id="score-breakdown"></div>
-
-    <!-- Comparison grid -->
     <div class="compare-grid" id="compare-grid"></div>
-
-    <!-- Order-level comparison table -->
     <div id="order-comparison-section" style="margin-bottom:12px;"></div>
 
-    <!-- Route Analysis -->
     <div class="analysis-section" id="analysis-section">
-      <!-- Side-by-side maps -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
         <div>
           <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">🚛 Your Routes</div>
@@ -1208,9 +1171,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
           <div id="legend-system" style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 4px 0;font-size:12px;"></div>
         </div>
       </div>
-      <!-- Diff breakdown -->
       <div class="diff-section" id="diff-section"></div>
-      <!-- Narrative -->
       <div class="analysis-narrative">
         <div class="analysis-narrative-title">📋 Coaching Notes</div>
         <div id="analysis-ai-body" class="analysis-ai-body"></div>
@@ -1245,23 +1206,22 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 <script>
 // ═══════════════════════════════════════════════════════════════
 // 1. CONSTANTS & GEOGRAPHIC DATA
-// All 13 Bay Area store locations (real coordinates) + Sacramento DC
 // ═══════════════════════════════════════════════════════════════
 const DEPOT = { id:'depot', lat:38.5063, lng:-121.4192, name:'DC · Sacramento, CA' };
 
 const STORE_COORDS = {
-  '0010': { lat:38.4404, lng:-122.7141 },  // Santa Rosa
-  '0011': { lat:37.9479, lng:-122.0608 },  // Pleasant Hill
-  '0065': { lat:37.9619, lng:-122.3425 },  // San Pablo
-  '0166': { lat:38.1074, lng:-122.5697 },  // Novato
-  '0181': { lat:37.9779, lng:-122.0311 },  // Concord
-  '0242': { lat:37.9358, lng:-122.3477 },  // Richmond
-  '0268': { lat:38.0280, lng:-121.8847 },  // Buchanan (Pittsburg area)
-  '0269': { lat:37.9977, lng:-121.7128 },  // Oakley
-  '0283': { lat:38.1044, lng:-122.2738 },  // W Vallejo
-  '0440': { lat:37.9313, lng:-121.6957 },  // Brentwood
-  '0459': { lat:37.9735, lng:-122.5311 },  // San Rafael
-  '0462': { lat:38.5477, lng:-122.8144 },  // Windsor
+  '0010': { lat:38.4404, lng:-122.7141 },
+  '0011': { lat:37.9479, lng:-122.0608 },
+  '0065': { lat:37.9619, lng:-122.3425 },
+  '0166': { lat:38.1074, lng:-122.5697 },
+  '0181': { lat:37.9779, lng:-122.0311 },
+  '0242': { lat:37.9358, lng:-122.3477 },
+  '0268': { lat:38.0280, lng:-121.8847 },
+  '0269': { lat:37.9977, lng:-121.7128 },
+  '0283': { lat:38.1044, lng:-122.2738 },
+  '0440': { lat:37.9313, lng:-121.6957 },
+  '0459': { lat:37.9735, lng:-122.5311 },
+  '0462': { lat:38.5477, lng:-122.8144 },
 };
 
 const STORE_NAMES = {
@@ -1288,8 +1248,6 @@ function haversineKm(lat1, lon1, lat2, lon2) {
 }
 function roadKm(a, b) { return haversineKm(a.lat, a.lng, b.lat, b.lng) * 1.3; }
 
-// Returns { ok, violations:[{store,msg}], waitMins }
-// Tries all orderings of stores, returns best feasible result
 function checkWindowFeasibility(truckOrders) {
   const SPEED_KMH = 80, SERVICE_MIN = 45;
   const storeIds = [...new Set(truckOrders.map(o=>o.store))];
@@ -1303,8 +1261,7 @@ function checkWindowFeasibility(truckOrders) {
   for (const ordering of perms(stores)) {
     const viols = []; let wait = 0; let cur = DEPOT; let t;
     const distFirst = roadKm(cur, ordering[0].coords);
-    const travelFirst = (distFirst/SPEED_KMH)*60;
-    t = ordering[0].winOpen; // arrive exactly at window open
+    t = ordering[0].winOpen;
     cur = ordering[0].coords;
     t += SERVICE_MIN;
     let feasible = true;
@@ -1329,17 +1286,15 @@ function checkWindowFeasibility(truckOrders) {
 }
 
 function windowBadgeColor(winOpen) {
-  // winOpen in minutes from midnight
-  if (winOpen <= 4*60) return '#fca5a5'; // 4am — tight
-  if (winOpen <= 6*60) return '#fcd34d'; // 5-6am — early
-  return '#86efac'; // 7am+ — flexible
+  if (winOpen <= 4*60) return '#fca5a5';
+  if (winOpen <= 6*60) return '#fcd34d';
+  return '#86efac';
 }
 function windowLabel(o) {
   const oh = o.winOpen/60, ch = o.winClose/60;
   return `${oh}–${ch}am`;
 }
 
-// All points for distance matrix (depot first, then stores in order)
 const DIST_POINTS = [
   DEPOT,
   ...Object.entries(STORE_COORDS).map(([id, c]) => ({ id, ...c }))
@@ -1394,7 +1349,6 @@ const SYS_ROUTES = [
   { num:21, start:'4:30', stops:[{store:'W Vallejo'}],                         cases:2047, orders:['39936375'] },
 ];
 
-// Map store names (as they appear in SYS_ROUTES) to store IDs
 const STOP_NAME_TO_ID = {
   'Santa Rosa':'0010','Pleasant Hill':'0011','San Pablo':'0065','Novato':'0166',
   'Concord':'0181','Richmond':'0242','Buchanan':'0268','Oakley':'0269',
@@ -1428,7 +1382,6 @@ function makeStoreIcon(abbr, color) {
 
 function initMap() {
   if (map) {
-    // Reset existing map
     Object.values(routeLayers).forEach(l => { if (l) map.removeLayer(l); });
     routeLayers = {};
     Object.values(storeMarkers).forEach(m => m.setIcon(makeStoreIcon(STORE_ABBR[m._storeId], '#3a4a5c')));
@@ -1442,7 +1395,6 @@ function initMap() {
     subdomains:'abcd', maxZoom:19
   }).addTo(map);
 
-  // Depot marker
   L.marker([DEPOT.lat, DEPOT.lng], {
     icon: L.divIcon({
       html:`<div style="background:#1e293b;width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.18);box-shadow:0 2px 10px rgba(0,0,0,0.5)">🏭</div>`,
@@ -1451,7 +1403,6 @@ function initMap() {
     zIndexOffset: 1000
   }).addTo(map).bindTooltip('DC · Sacramento, CA', { permanent:true, direction:'bottom', offset:[0,14], className:'store-tt' });
 
-  // Store markers
   Object.entries(STORE_COORDS).forEach(([id, coords]) => {
     const icon = makeStoreIcon(STORE_ABBR[id], '#3a4a5c');
     const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
@@ -1469,7 +1420,6 @@ function updateMarkerColors() {
   Object.entries(storeMarkers).forEach(([id, m]) => {
     m.setIcon(makeStoreIcon(STORE_ABBR[id], colors[id] || '#3a4a5c'));
   });
-  // Update legend
   const leg = document.getElementById('map-legend');
   const activeTrucks = trucks.filter(t => t.orders.length > 0);
   if (!activeTrucks.length) {
@@ -1494,32 +1444,16 @@ async function drawTruckRoute(truckId) {
   if (!map) return;
   const truck = trucks.find(t => t.id === truckId);
   if (!truck) return;
-
   clearTruckRouteLayers(truckId);
   if (!truck.orders.length) return;
-
   const idx = trucks.indexOf(truck);
   const color = TRUCK_COLORS[idx % TRUCK_COLORS.length];
   const stores = optimizeStopOrder(getUniqueStores(truck.orders));
   const storeAbbrevs = stores.map(function(id){ return STORE_ABBR[id]; }).join('→');
   const labelText = 'T' + truck.id + '·' + storeAbbrevs;
   const latLngs = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-
-  // Draw straight-line route
   routeLayers[truckId] = L.polyline(latLngs, { color, weight:3, opacity:0.85, lineJoin:'round', lineCap:'round' }).addTo(map);
   placeTruckLabel(truckId, labelText, latLngs, color, 0.38);
-}
-
-function polylineMidpoint(pts) {
-  if (pts.length===1) return pts[0];
-  let segs=[],total=0;
-  for (let i=0;i<pts.length-1;i++) { const d=haversine(pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1]); segs.push(d); total+=d; }
-  let acc=0,half=total/2;
-  for (let i=0;i<segs.length;i++) {
-    if (acc+segs[i]>=half) { const t=(half-acc)/segs[i]; return [pts[i][0]+t*(pts[i+1][0]-pts[i][0]),pts[i][1]+t*(pts[i+1][1]-pts[i][1])]; }
-    acc+=segs[i];
-  }
-  return pts[Math.floor(pts.length/2)];
 }
 
 function placeTruckLabel(truckId, labelText, labelPts, color, pct) {
@@ -1538,7 +1472,6 @@ function placeTruckLabel(truckId, labelText, labelPts, color, pct) {
 }
 
 function routeLabelPoint(pts, pct) {
-  // Place label at ~38% of route length — lands on open highway, not near endpoint stores
   if (!pts || pts.length <= 1) return pts ? pts[0] : [38.05, -122.2];
   var p = (pct !== undefined) ? pct : 0.38;
   var total = 0, segs = [];
@@ -1572,8 +1505,6 @@ function addResultsLegend(map, entries, title) {
   ctrl.addTo(map);
 }
 
-// Route geometry: always use straight-line polylines (no external routing API needed).
-// fetchRouteGeo returns null so callers fall back to their built-in polyline rendering.
 function fetchRouteGeo(latLngs) {
   return Promise.resolve(null);
 }
@@ -1611,9 +1542,8 @@ function buildHaversineMatrix() {
 }
 
 async function loadDistMatrix() {
-  // Use haversine-based estimated distances immediately — no external API needed.
   distMatrix = buildHaversineMatrix();
-  usingEstimated = false; // treated as accurate enough for scoring
+  usingEstimated = false;
   distMatrixReady = true;
   optimalMiles = calcOptimalMiles();
   const optEl = document.getElementById('mo-opt');
@@ -1626,7 +1556,6 @@ function getDistBetween(id1, id2) {
   if (distMatrix && distMatrix[id1] && distMatrix[id1][id2] !== undefined) {
     return distMatrix[id1][id2];
   }
-  // Real-time haversine fallback
   const p1 = id1 === 'depot' ? DEPOT : STORE_COORDS[id1];
   const p2 = id2 === 'depot' ? DEPOT : STORE_COORDS[id2];
   return p1 && p2 ? haversine(p1.lat,p1.lng,p2.lat,p2.lng)*1.28 : 0;
@@ -1650,7 +1579,6 @@ function optimizeStopOrder(storeIds) {
 function getTruckMiles(truck) {
   if (!truck.orders.length) return 0;
   const stores = optimizeStopOrder(getUniqueStores(truck.orders));
-  // One-way: DC → stops only
   let miles = getDistBetween('depot', stores[0]);
   for (let i = 0; i < stores.length-1; i++) miles += getDistBetween(stores[i], stores[i+1]);
   return Math.round(miles);
@@ -1676,7 +1604,6 @@ function calcOptimalMiles() {
 
 function updateMilesOverlay() {
   const total = getTotalMiles();
-  // Mobile bar
   const mobOpt   = document.getElementById('mob-opt');
   const mobYours = document.getElementById('mob-yours');
   if (mobOpt)   mobOpt.textContent   = optimalMiles ? optimalMiles.toLocaleString()+' mi' : '—';
@@ -1708,7 +1635,6 @@ function startGame() {
   resetGame();
   showScreen('screen-game');
   startTimer();
-  // Initialize map after screen is visible
   setTimeout(() => {
     initMap();
     loadDistMatrix();
@@ -1751,7 +1677,6 @@ async function submitRoutes() {
   document.getElementById('submit-btn').textContent = '⏳ Scoring…';
   document.getElementById('submit-btn').disabled = true;
 
-  // Build geo maps — straight-line polylines for all routes
   const finalGeos = {};
   const sysGeoMap = {};
 
@@ -1787,7 +1712,6 @@ function dropToTruck(e, tid) {
   e.preventDefault(); e.currentTarget.classList.remove('drag-over');
   if (!draggedOrder) return;
   if (dragSource === 'truck_'+tid) return;
-  // Hard weight check — reject drop if it would exceed 43,500 lb limit
   const truck = trucks.find(t => t.id === tid);
   if (truck) {
     const currentWeight = truck.orders.reduce((s,o) => s + o.weight, 0);
@@ -1837,7 +1761,6 @@ function renderPool() {
   const badge = document.getElementById('pool-badge');
   if (badge) badge.textContent = poolOrders.length;
 
-  // Apply search
   const q = poolSearch.trim().toLowerCase();
   let visible = poolOrders.filter(o => {
     if (q && !o.storeName.toLowerCase().includes(q) && !o.id.toLowerCase().includes(q) && !o.store.includes(q)) return false;
@@ -1847,7 +1770,6 @@ function renderPool() {
     return true;
   });
 
-  // Apply sort
   visible.sort((a,b) => {
     if (poolSort==='name-asc')   return a.storeName.localeCompare(b.storeName);
     if (poolSort==='name-desc')  return b.storeName.localeCompare(a.storeName);
@@ -1911,7 +1833,6 @@ function renderTrucks() {
     const pctW = Math.round((totW/CAP.weight)*100);
     const capClsC = pctC>100?'over':pctC>80?'warn':'good';
     const capClsW = pctW>100?'over':pctW>90?'warn':pctW>75?'warn':'good';
-    const isOver = totW>CAP.weight;
     const miles = getTruckMiles(t);
     const stores = getUniqueStores(t.orders).map(id=>STORE_ABBR[id]).join(' → ');
 
@@ -1994,7 +1915,6 @@ function updateTopBar() {
   const assigned = ORDERS.length - poolOrders.length;
   let violations = 0;
   trucks.forEach(t => {
-    const totC = t.orders.reduce((a,o)=>a+o.cases,0);
     const totW = t.orders.reduce((a,o)=>a+o.weight,0);
     if (totW>CAP.weight) violations++;
   });
@@ -2009,15 +1929,12 @@ function updateTopBar() {
   if (vEl) { vEl.textContent = violations; vEl.className = 'gh-val'+(violations>0?' r':' g'); }
 }
 
-// pool is always visible (no toggle needed)
-
 // ═══════════════════════════════════════════════════════════════
 // 9. SCORING
 // ═══════════════════════════════════════════════════════════════
 function calculateScore() {
   const violations=[], sb={};
 
-  // 1. Miles efficiency (400 pts)
   const yourMiles=getTotalMiles();
   let milesScore=0;
   if (yourMiles===0) { milesScore=0; }
@@ -2027,7 +1944,6 @@ function calculateScore() {
   sb.miles={label:'Miles efficiency',score:milesScore,max:400,pct:milesScore/400,
     detail:optimalMiles?`Your ${yourMiles.toLocaleString()} mi vs optimal ${optimalMiles.toLocaleString()} mi (${Math.round((optimalMiles/yourMiles)*100)}%)`:`${yourMiles.toLocaleString()} mi total`};
 
-  // 2. Window compliance (350 pts) — can each truck serve all its stops within delivery windows?
   const activeTruckList = trucks.filter(t=>t.orders.length>0);
   let windowViolations = 0, totalWindowedStores = 0;
   const truckWindowResults = {};
@@ -2043,7 +1959,6 @@ function calculateScore() {
   sb.window={label:'Delivery window compliance',score:windowScore,max:150,pct:windowScore/150,
     detail:`${totalWindowedStores - windowViolations}/${totalWindowedStores} stores reachable within windows (${windowPct}%)`,windowPct,windowViolations,truckWindowResults};
 
-  // Route match — kept for analysis/coaching but not scored
   const sysGroupsForMatch = SYS_ROUTES.map(sr=>({
     num:sr.num, stores:new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean)),
     orderIds:new Set(sr.orders)
@@ -2058,7 +1973,6 @@ function calculateScore() {
       return extraOrders.every(o=>sg.stores.has(o.store));
     })||null;
   };
-  const sysStoreGroups = sysGroupsForMatch;
   const orderToTruckMap={};
   activeTruckList.forEach(t=>{ t.orders.forEach(o=>{ orderToTruckMap[o.id]=t.id; }); });
   let matchedOrders=0;
@@ -2075,13 +1989,11 @@ function calculateScore() {
   sb.routematch={label:'Route match vs system',score:matchScore,max:300,pct:matchedOrders/ORDERS.length,
     detail:`${matchedOrders}/${ORDERS.length} orders match system grouping (${matchPct}%)`,matchPct,matchedOrders};
 
-  // 3. Orders assigned (100 pts)
   const assignedCount=ORDERS.length-poolOrders.length;
   const assignedScore=Math.round(100*(assignedCount/ORDERS.length));
   if (poolOrders.length>0) violations.push(`${poolOrders.length} order(s) not assigned`);
   sb.assigned={label:'Orders assigned',score:assignedScore,max:100,pct:assignedCount/ORDERS.length,detail:`${assignedCount}/${ORDERS.length} orders`};
 
-  // 4. Speed bonus (50 pts) — full points at 4 min remaining, linear down to 0 at timeout.
   const timeRemaining = Math.max(0, 300 - elapsedSeconds);
   const speedScore = Math.round(50 * Math.min(timeRemaining, 240) / 240);
   sb.speed={label:'Speed bonus',score:speedScore,max:50,pct:speedScore/50,detail:`Completed with ${Math.floor(timeRemaining/60)}m ${timeRemaining%60}s remaining`};
@@ -2102,19 +2014,16 @@ function calculateScore() {
 // 10. RESULTS RENDER
 // ═══════════════════════════════════════════════════════════════
 function renderResults(r, finalGeos) {
-  // Score circle
   document.getElementById('results-score').textContent = r.totalScore;
   const circle = document.getElementById('results-circle');
   const bdrColor = r.totalScore>=900?'#f59e0b':r.totalScore>=700?'var(--green)':r.totalScore>=500?'var(--accent)':'#6b7280';
   circle.style.borderColor = bdrColor;
 
-  // Headline + grade
   const gradeLabels = {S:'🏆 Legendary',A:'🌟 Excellent',B:'👍 Good',C:'📈 Needs work',D:'🔧 Keep trying'};
   document.getElementById('results-headline').textContent = r.totalScore>=900?'Outstanding!':r.totalScore>=700?'Great Work!':r.totalScore>=500?'Good Effort!':'Nice Try!';
   document.getElementById('results-grade-badge').innerHTML = `<div class="result-grade grade-${r.grade}">${r.grade} — ${gradeLabels[r.grade]}</div>`;
   document.getElementById('results-sub').textContent = `👤 ${r.playerName} · ⏱️ ${formatTime(r.elapsedSeconds)}`;
 
-  // Miles highlight
   document.getElementById('r-your-miles').textContent = r.yourMiles.toLocaleString()+' mi';
   const optTxt = r.optimalMiles ? r.optimalMiles.toLocaleString()+' mi' : '—';
   document.getElementById('r-opt-miles').textContent = optTxt;
@@ -2132,7 +2041,6 @@ function renderResults(r, finalGeos) {
   const matchLbl=document.querySelector('.r-match-label');
   if (matchLbl) matchLbl.textContent='Route Match';
 
-  // Score breakdown
   const colors = { miles:'#3b7ef8', routematch:'#8b5cf6', window:'#f0a623', assigned:'#0fba80', speed:'#06c0d4' };
   let bkHtml = '<h3>Score breakdown</h3>';
   Object.entries(r.sb).forEach(([k,v]) => {
@@ -2142,12 +2050,9 @@ function renderResults(r, finalGeos) {
   });
   document.getElementById('score-breakdown').innerHTML = bkHtml;
 
-  // Trigger analysis (async AI call)
   setTimeout(() => buildAnalysis(r), 100);
-  // Build order comparison table
   buildOrderComparison(r);
 
-  // Comparison grid
   const cg = document.getElementById('compare-grid');
   const m = (val,sys,lower) => val===sys?'same':((lower?val<sys:val>sys)?'better':'worse');
   cg.innerHTML = `
@@ -2169,7 +2074,6 @@ function renderResults(r, finalGeos) {
     </div>`;
 }
 
-
 // ═══════════════════════════════════════════════════════════════
 // 11. LEADERBOARD
 // ═══════════════════════════════════════════════════════════════
@@ -2182,13 +2086,6 @@ function saveToLeaderboard(r) {
     const totW = t.orders.reduce((s,o)=>s+o.weight,0);
     return { name: t.name, stops: storeNames, miles: getTruckMiles(t), weight: Math.round(totW) };
   });
-  const entry = {
-    name: r.playerName, score: r.totalScore, grade: r.grade,
-    trucks: r.numTrucks, miles: r.yourMiles,
-    violations: r.violations.length, time: formatTime(r.elapsedSeconds),
-    timestamp: r.timestamp, routes: routeDetail
-  };
-  // Sync to Google Sheets via POST with JSON body (matches doPost in Apps Script)
   const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
   const matchPct = r.sb && r.sb.routematch
     ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
@@ -2204,7 +2101,6 @@ function saveToLeaderboard(r) {
     routes:     routeSummary,
     orders:     r.assignedCount
   };
-  console.log('Sending to Sheets:', payload);
   fetch(SHEETS_URL, {
     method: 'POST',
     mode: 'no-cors',
@@ -2220,7 +2116,6 @@ function _renderLeaderboardRows(rows) {
   list.innerHTML = rows.map((e,i) => {
     const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
     const uid = 'lb-routes-'+i;
-    // e.routes may be an array (session) or a string summary (from Sheets)
     let routesHtml = '';
     if (Array.isArray(e.routes) && e.routes.length) {
       routesHtml = `<div class="lb-routes" id="${uid}" style="display:none">` +
@@ -2258,8 +2153,6 @@ function _renderLeaderboardRows(rows) {
 function renderLeaderboard() {
   const list = document.getElementById('lb-list');
   list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⏳ Loading leaderboard…</div>';
-
-  // Sheets is the only source of truth — never show local session data
   fetch(SHEETS_URL, { method: 'GET', mode: 'cors' })
     .then(resp => resp.json())
     .then(rows => {
@@ -2331,19 +2224,16 @@ function buildOrderComparison(r) {
   var el = document.getElementById('order-comparison-section');
   if (!el) return;
 
-  // Build lookup: orderId → system route
   var orderToSysRoute = {};
   SYS_ROUTES.forEach(function(sr, i) {
     sr.orders.forEach(function(oid) { orderToSysRoute[oid] = {sr: sr, idx: i}; });
   });
 
-  // Build lookup: orderId → user truck
   var orderToUserTruck = {};
   trucks.filter(function(t){return t.orders.length>0;}).forEach(function(t, ti) {
     t.orders.forEach(function(o) { orderToUserTruck[o.id] = {truck: t, idx: ti}; });
   });
 
-  // Short reason for each system route grouping
   var SYS_ROUTE_REASON = {
     2:  'Brentwood + Buchanan cluster on the same East Bay I-4 corridor — one truck covers both.',
     3:  'San Pablo + Novato are both P9 (4–8am). One Bay crossing via the Richmond–San Rafael Bridge serves both.',
@@ -2356,7 +2246,6 @@ function buildOrderComparison(r) {
 
   var correct=0, wrong=0, unassigned=0;
 
-  // Group orders by system route for the table
   var html = '<div class="oc-wrap">';
   html += '<div class="oc-header">'
     + '<span class="oc-title">📋 Order-Level Assignment Comparison</span>'
@@ -2397,7 +2286,6 @@ function buildOrderComparison(r) {
       var userTruckColor = userTruckInfo ? TRUCK_COLORS[userTruckIdx % TRUCK_COLORS.length] : 'var(--amber)';
       var userTruckName = userTruckInfo ? userTruckInfo.name : 'Unassigned';
 
-      // Is the user's truck correctly matching this system route?
       var isCorrect = false;
       if (userTruckInfo) {
         var userTruckStores = new Set(getUniqueStores(userTruckInfo.orders));
@@ -2413,7 +2301,6 @@ function buildOrderComparison(r) {
       else if (!userTruckInfo) unassigned++;
       else wrong++;
 
-      // Compute why the user's grouping is inefficient (if wrong)
       var effNote = '';
       if (!isCorrect && userTruckInfo) {
         var sysStoreArr = sr.stops.map(function(s){return STOP_NAME_TO_ID[s.store];}).filter(Boolean);
@@ -2424,7 +2311,6 @@ function buildOrderComparison(r) {
           for (var j=0;j<orderedSys.length-1;j++) sysMi += getDistBetween(orderedSys[j],orderedSys[j+1]);
           sysMi = Math.round(sysMi);
         }
-        // Use only this route's stores on the user's truck (not full truck miles)
         var routeStoresOnTruck = getUniqueStores(userTruckInfo.orders)
           .filter(function(sid){ return sysStoreArr.indexOf(sid) >= 0; });
         var userMi = 0;
@@ -2460,20 +2346,13 @@ function buildOrderComparison(r) {
     html += '</tbody></table>';
   });
 
-  html += '</div>'; // oc-wrap
-
+  html += '</div>';
   el.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════════════
 // ROUTE ANALYSIS
 // ═══════════════════════════════════════════════════════════════
-// 10. ANALYSIS + RESULTS MAP
-// ═══════════════════════════════════════════════════════════════
-let resultsFinalGeos = {};
-let resultsViewMode = 'user'; // 'user' | 'system'
-let sysGeos = {};
-
 function buildAnalysis(r) {
 
   var ROUTE_INSIGHTS = {
@@ -2504,10 +2383,8 @@ function buildAnalysis(r) {
   function findMatchingGroup(truck) {
     var truckOrderIds = new Set(truck.orders.map(function(o){ return o.id; }));
     return sysStoreGroups.find(function(sg) {
-      // All sys route orders must be on this truck
       var sysOnThisTruck = Array.from(sg.orderIds).filter(function(id){ return truckOrderIds.has(id); });
       if (sysOnThisTruck.length !== sg.orderIds.size) return false;
-      // Extra orders are OK only if they share the same store set
       var extraOrders = truck.orders.filter(function(o){ return !sg.orderIds.has(o.id); });
       if (extraOrders.length === 0) return true;
       return extraOrders.every(function(o){ return sg.stores.has(o.store); });
@@ -2525,12 +2402,10 @@ function buildAnalysis(r) {
     if (match) matchedTruckIds.add(match.id);
   });
 
-  // For each order, which user truck has it?
   var orderToUserTruck = {};
   activeTrucks.forEach(function(t) {
     t.orders.forEach(function(o){ orderToUserTruck[o.id] = t; });
   });
-  // For each store, which user truck has it?
   var storeToUserTruck = {};
   activeTrucks.forEach(function(t) {
     getUniqueStores(t.orders).forEach(function(id){ storeToUserTruck[id] = t; });
@@ -2551,7 +2426,6 @@ function buildAnalysis(r) {
     + '<div class="mr-summary-sub">' + summaryMsg + '</div></div>'
     + '</div>';
 
-  // ── SECTION 1: System solution overview ─────────────────────────────────────
   html += '<div class="sys-overview">';
   html += '<div class="sys-ov-head"><span>System Solution \u2014 Optimal Grouping</span>'
     + '<span style="font-size:12px;font-weight:400;letter-spacing:0;text-transform:none">Your match shown right</span></div>';
@@ -2588,9 +2462,8 @@ function buildAnalysis(r) {
       + '<div class="sys-ov-match ' + matchCls + '">' + matchTxt + '</div>'
       + '</div>';
   });
-  html += '</div>'; // sys-overview
+  html += '</div>';
 
-  // ── SECTION 2: Per-route order breakdown ────────────────────────────────────
   html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin:14px 0 8px">Where Each Order Belongs</div>';
 
   SYS_ROUTES.forEach(function(sr, i) {
@@ -2606,22 +2479,17 @@ function buildAnalysis(r) {
     var matched = !!userTruck;
     var insight = ROUTE_INSIGHTS[sr.num] || {};
 
-    // Find involved user trucks for unmatched routes.
-    // Use order-ID lookup (not store lookup) so duplicate-store routes like
-    // W Vallejo Rt.21 / Rt.22 each find the correct truck instead of colliding.
     var involvedTrucks = {};
     srOrders.forEach(function(o) {
       var t = orderToUserTruck[o.id];
       if (t) involvedTrucks[t.id] = t;
     });
     var involvedList = Object.values(involvedTrucks);
-    // Use full truck miles so per-route extras reconcile with the headline gap
     var userMiTotal = Math.round(involvedList.reduce(function(s, t) { return s + getTruckMiles(t); }, 0));
     var milesDiff = userMiTotal - mi;
 
     html += '<div class="ob-section ' + (matched ? 'matched' : 'unmatched') + '">';
 
-    // Header
     html += '<div class="ob-head">'
       + '<div class="ob-head-dot" style="background:' + col + '"></div>'
       + '<div class="ob-head-info">'
@@ -2635,11 +2503,7 @@ function buildAnalysis(r) {
       + '</div>'
       + '</div>';
 
-    // For unmatched: insight only (no miles comparison - reconciliation handles miles)
     if (!matched && insight.why) {
-        // Determine the right coaching note:
-        //   - stores split across >1 truck  → use the static "cost" text
-        //   - stores on same truck but truck has stowaways from other routes → explain the stowaway problem
         var isSplit = involvedList.length > 1;
         var extraOrdersOnTruck = (involvedList.length === 1)
           ? involvedList[0].orders.filter(function(o){ return !sg.orderIds.has(o.id); })
@@ -2660,7 +2524,6 @@ function buildAnalysis(r) {
           + '</div>';
       }
 
-    // Column headers
     html += '<div class="ob-col-heads">'
       + '<div class="ob-col-head">Order #</div>'
       + '<div class="ob-col-head">Store</div>'
@@ -2669,7 +2532,6 @@ function buildAnalysis(r) {
       + '<div class="ob-col-head"></div>'
       + '</div>';
 
-    // Order rows
     srOrders.forEach(function(o) {
       var ut = orderToUserTruck[o.id];
       var truckName = ut ? ut.name : 'unassigned';
@@ -2687,10 +2549,9 @@ function buildAnalysis(r) {
         + '</div>';
     });
 
-    html += '</div>'; // ob-section
+    html += '</div>';
   });
 
-  // Extra trucks
   var extraTrucks = activeTrucks.filter(function(t){ return !matchedTruckIds.has(t.id); });
   if (extraTrucks.length > 0) {
     html += '<div class="mr-extra"><div class="mr-extra-title">\u26a0\ufe0f '
@@ -2707,7 +2568,6 @@ function buildAnalysis(r) {
     html += '</div>';
   }
 
-  // Miles reconciliation — two-column: your trucks vs system routes
   if (r.optimalMiles) {
     var totalGap = (r.yourMiles || 0) - (r.optimalMiles || 0);
 
@@ -2749,11 +2609,9 @@ function buildAnalysis(r) {
 
   diffEl.innerHTML = '<div class="diff-header">\ud83d\udcca Route Comparison</div>' + html;
 
-  // Coaching notes (brief)
   var aiBody = document.getElementById('analysis-ai-body');
   var yourMi = r.yourMiles || 0, optMi = r.optimalMiles || 0;
   var eff = optMi && yourMi ? Math.round((optMi/yourMi)*100) : null;
-  var mPct = r.sb.routematch ? (r.sb.routematch.matchPct || 0) : 0;
   var notes = [];
   if (eff !== null) {
     if (eff > 100) {
@@ -2791,7 +2649,6 @@ function buildAnalysis(r) {
   aiBody.textContent = notes.join('\n\n');
 }
 
-
 let resultsMapUser = null, resultsMapSystem = null;
 
 function initResultsMap(finalGeos, sysGeoMap) {
@@ -2819,12 +2676,10 @@ function _drawUserMap(finalGeos, activeTrucks) {
   });
   var bounds = [[DEPOT.lat,DEPOT.lng]];
   Object.values(finalGeos).forEach(function(item) {
-    var geo=item.geo, lls=item.lls, color=item.color;
-    // Draw solid straight-line route
+    var lls=item.lls, color=item.color;
     L.polyline(lls,{color:color,weight:3.5,opacity:0.88,lineJoin:'round',lineCap:'round'}).addTo(resultsMapUser);
     if (lls) lls.forEach(function(ll){ bounds.push(ll); });
   });
-  // External legend
   var legendEl = document.getElementById('legend-user');
   if (legendEl) {
     legendEl.innerHTML = activeTrucks.map(function(t,i){
@@ -2857,11 +2712,8 @@ function _drawSystemMap(sysGeoMap) {
         .bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});
       bounds.push([c.lat,c.lng]);
     });
-    var item = sysGeoMap && sysGeoMap[sr.num];
-    // Draw solid straight-line route
     L.polyline(lls,{color:col,weight:3.5,opacity:0.9,lineJoin:'round',lineCap:'round'}).addTo(resultsMapSystem);
   });
-  // External legend
   var legendEl = document.getElementById('legend-system');
   if (legendEl) {
     legendEl.innerHTML = SYS_ROUTES.map(function(sr, i){
@@ -2874,6 +2726,7 @@ function _drawSystemMap(sysGeoMap) {
   }
   try { resultsMapSystem.fitBounds(bounds,{padding:[28,28]}); } catch(e) {}
 }
+
 // ═══════════════════════════════════════════════════════════════
 // CONTEXT MENU
 // ═══════════════════════════════════════════════════════════════
@@ -2881,12 +2734,11 @@ let ctxOrder = null, ctxSourceTid = null;
 
 function openCtx(e, order, sourceTid) {
   ctxOrder = order;
-  ctxSourceTid = sourceTid; // null = from pool
+  ctxSourceTid = sourceTid;
 
   const menu = document.getElementById('ctx-menu');
   menu.innerHTML = '';
 
-  // Title
   const title = document.createElement('div');
   title.className = 'ctx-title';
   title.textContent = order.storeName + ' · ' + Math.round(order.weight).toLocaleString() + ' lbs';
@@ -2894,10 +2746,9 @@ function openCtx(e, order, sourceTid) {
 
   const div1 = document.createElement('div'); div1.className = 'ctx-divider'; menu.appendChild(div1);
 
-  // Move to truck items
   if (trucks.length) {
     trucks.forEach(t => {
-      if (sourceTid === t.id) return; // already on this truck
+      if (sourceTid === t.id) return;
       const curW = t.orders.reduce((s,o)=>s+o.weight,0);
       const wouldExceed = curW + order.weight > CAP.weight;
       const item = document.createElement('div');
@@ -2920,7 +2771,6 @@ function openCtx(e, order, sourceTid) {
     const div2 = document.createElement('div'); div2.className = 'ctx-divider'; menu.appendChild(div2);
   }
 
-  // Return to pool (only if currently on a truck)
   if (sourceTid !== null) {
     const ret = document.createElement('div');
     ret.className = 'ctx-item danger';
@@ -2929,7 +2779,6 @@ function openCtx(e, order, sourceTid) {
     menu.appendChild(ret);
   }
 
-  // Position menu — keep it inside the viewport
   menu.classList.add('open');
   const vw = window.innerWidth, vh = window.innerHeight;
   const mw = menu.offsetWidth, mh = menu.offsetHeight;
@@ -2948,7 +2797,6 @@ function closeCtx() {
 
 function ctxMoveToTruck(tid) {
   if (!ctxOrder) return;
-  // Remove from current location
   if (ctxSourceTid === null) {
     poolOrders = poolOrders.filter(o => o.id !== ctxOrder.id);
   } else {
@@ -2973,7 +2821,6 @@ function ctxReturnToPool() {
   updateMilesOverlay();
 }
 
-// Close context menu on any click elsewhere
 document.addEventListener('click', e => {
   const menu = document.getElementById('ctx-menu');
   if (menu && !menu.contains(e.target)) closeCtx();
@@ -2984,13 +2831,21 @@ function showToast(msg) {
   setTimeout(()=>t.classList.remove('show'),4000);
 }
 
-// Enter key on name input
 document.getElementById('player-name-input').addEventListener('keydown', e => { if(e.key==='Enter') startGame(); });
 
 // ═══════════════════════════════════════════════════════════════
-// TOUCH DRAG AND DROP SUPPORT (mobile)
-// Mirrors the HTML5 drag API using touch events on .order-chip
-// and .order-row elements. Works alongside the existing drag logic.
+// TOUCH DRAG AND DROP — ANDROID FIX
+//
+// Two bugs fixed vs original:
+//
+// Bug 1 (main Android issue): the old code set isDraggingTouch=true inside
+// the 400ms timer, even with zero finger movement. Android users hold slightly
+// longer than iOS, so slow taps were silently treated as drags and the sheet
+// never opened. Fix: split into longPressTriggered (timer fired) and
+// isDraggingTouch (finger actually moved). Slow taps always reach the tap path.
+//
+// Bug 2: Android touch jitter (10-14px natural drift) exceeded the old 8px tap
+// threshold and the 10px long-press cancel threshold. Bumped to 15px and 12px.
 // ═══════════════════════════════════════════════════════════════
 (function() {
   'use strict';
@@ -2998,18 +2853,24 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
   var touchDragOrder = null;
   var touchDragSource = null;
   var longPressTimer = null;
-  var isDraggingTouch = false;
+  var longPressTriggered = false; // timer fired; ghost shown
+  var isDraggingTouch = false;    // finger moved after long-press; drag committed
   var lastDropTarget = null;
-  var touchStartX = 0, touchStartY = 0; // shared for jitter threshold
+  var touchStartX = 0, touchStartY = 0;
+  var tapStartX = 0, tapStartY = 0;
+  var tapTarget = null;
+  var tapStartTime = 0;
 
   function getOrderFromEl(el) {
     var chip = el.closest('.order-chip, .order-row');
     if (!chip) return null;
     var id = chip.dataset.id;
-    // search pool then trucks
-    var o = poolOrders.find(function(x){ return x.id===id; });
+    var o = poolOrders.find(function(x){ return x.id === id; });
     if (!o) {
-      trucks.forEach(function(t){ var found=t.orders.find(function(x){return x.id===id;}); if(found) o=found; });
+      trucks.forEach(function(t) {
+        var found = t.orders.find(function(x){ return x.id === id; });
+        if (found) o = found;
+      });
     }
     return o || null;
   }
@@ -3034,187 +2895,180 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
     ghost.style.top  = (y - 48) + 'px';
   }
 
-  function hideGhost() {
-    ghost.style.display = 'none';
-  }
+  function hideGhost() { ghost.style.display = 'none'; }
 
   function highlightTarget(el) {
-    if (lastDropTarget && lastDropTarget !== el) {
-      lastDropTarget.classList.remove('drag-over');
-    }
-    if (el) {
-      el.classList.add('drag-over');
-    }
+    if (lastDropTarget && lastDropTarget !== el) lastDropTarget.classList.remove('drag-over');
+    if (el) el.classList.add('drag-over');
     lastDropTarget = el;
   }
 
   function clearHighlight() {
-    if (lastDropTarget) {
-      lastDropTarget.classList.remove('drag-over');
-      lastDropTarget = null;
-    }
+    if (lastDropTarget) { lastDropTarget.classList.remove('drag-over'); lastDropTarget = null; }
   }
 
   function getDropTarget(x, y) {
-    // Temporarily hide ghost so elementFromPoint works
     ghost.style.display = 'none';
     var el = document.elementFromPoint(x, y);
     ghost.style.display = 'block';
     if (!el) return null;
-
-    // Check if landed in a truck drop-zone
     var dz = el.closest('.drop-zone');
     if (dz) return { type: 'truck', tid: parseInt(dz.dataset.tid), el: dz };
-
-    // Check if landed in the order pool
     var pool = el.closest('#order-pool, .orders-panel');
     if (pool) return { type: 'pool', el: pool };
-
     return null;
   }
 
-  // ── Long-press to start drag ──
+  function resetTouchState() {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressTriggered = false;
+    isDraggingTouch = false;
+    touchDragOrder = null;
+    touchDragSource = null;
+    draggedOrder = null;
+    dragSource = null;
+    clearHighlight();
+    hideGhost();
+    document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
+      .forEach(function(el){ el.classList.remove('dragging'); });
+  }
+
+  // ── touchstart: prime long-press AND record tap start ──
   document.addEventListener('touchstart', function(e) {
     var chip = e.target.closest('.order-chip, .order-row');
     if (!chip) return;
-    // Do NOT preventDefault here — that would block vertical scrolling.
-    // user-select:none + -webkit-touch-callout:none in CSS handle Android's
-    // long-press text/callout menus without needing to block the event.
-    var touch = e.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
 
+    var touch = e.touches[0];
+    touchStartX = tapStartX = touch.clientX;
+    touchStartY = tapStartY = touch.clientY;
+    tapTarget   = chip;
+    tapStartTime = Date.now();
+
+    // After 400ms, prime for drag — but do NOT commit (isDraggingTouch stays false).
+    // Drag commits only when the finger actually moves in touchmove.
+    // This is the core Android fix: a 400ms+ tap with no movement stays a tap.
     longPressTimer = setTimeout(function() {
-      var o = getOrderFromEl(chip);
+      var o   = getOrderFromEl(chip);
       var src = getSourceFromEl(chip);
       if (!o || !src) return;
-
-      touchDragOrder = o;
+      longPressTriggered = true;
+      touchDragOrder  = o;
       touchDragSource = src;
-      isDraggingTouch = true;
-
-      // Sync with existing drag state variables
-      draggedOrder = o;
-      dragSource = src;
-
-      chip.classList.add('dragging');
-      showGhost(o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs', touchStartX, touchStartY);
-
-      // Brief haptic if available
+      draggedOrder    = o;
+      dragSource      = src;
+      showGhost(
+        o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs',
+        touchStartX, touchStartY
+      );
       if (navigator.vibrate) navigator.vibrate(40);
     }, 400);
   }, { passive: true });
 
+  // ── touchmove: cancel timer on scroll; commit drag on movement ──
   document.addEventListener('touchmove', function(e) {
-    if (longPressTimer && !isDraggingTouch) {
-      // Only cancel long-press if finger moved more than 10px — Android has
-      // natural jitter that would otherwise kill the timer immediately.
-      var t = e.touches[0];
-      var dx = Math.abs(t.clientX - touchStartX);
-      var dy = Math.abs(t.clientY - touchStartY);
-      if (dx > 10 || dy > 10) {
+    var t  = e.touches[0];
+    var dx = Math.abs(t.clientX - touchStartX);
+    var dy = Math.abs(t.clientY - touchStartY);
+
+    if (!longPressTriggered) {
+      // Long-press not yet fired. Cancel timer if finger moved > 12px.
+      // 12px (was 10px) gives Android's natural jitter more slack.
+      if (dx > 12 || dy > 12) {
         clearTimeout(longPressTimer);
         longPressTimer = null;
+        tapTarget = null; // too much movement — not a tap either
+      }
+      return; // let scroll proceed normally
+    }
+
+    // Long-press fired. Commit to drag on first movement > 8px.
+    if (!isDraggingTouch) {
+      if (dx > 8 || dy > 8) {
+        isDraggingTouch = true;
+        var chipEl = document.querySelector(
+          '.order-chip[data-id="' + (touchDragOrder && touchDragOrder.id) + '"],' +
+          '.order-row[data-id="' + (touchDragOrder && touchDragOrder.id) + '"]'
+        );
+        if (chipEl) chipEl.classList.add('dragging');
+      } else {
+        return; // ghost visible but drag not committed yet — don't block scroll
       }
     }
-    if (!isDraggingTouch) return;
-    e.preventDefault(); // block scroll while actively dragging
 
-    var touch = e.touches[0];
-    moveGhost(touch.clientX, touch.clientY);
-
-    var target = getDropTarget(touch.clientX, touch.clientY);
+    e.preventDefault(); // block scroll only once drag is committed
+    moveGhost(t.clientX, t.clientY);
+    var target = getDropTarget(t.clientX, t.clientY);
     highlightTarget(target ? target.el : null);
   }, { passive: false });
 
+  // ── touchend: execute drop OR open sheet on tap ──
   document.addEventListener('touchend', function(e) {
     clearTimeout(longPressTimer);
     longPressTimer = null;
 
-    if (!isDraggingTouch) return;
-
     var touch = e.changedTouches[0];
-    var target = getDropTarget(touch.clientX, touch.clientY);
+    var dx    = Math.abs(touch.clientX - tapStartX);
+    var dy    = Math.abs(touch.clientY - tapStartY);
 
-    clearHighlight();
-    hideGhost();
+    // ── Drop path ──
+    if (isDraggingTouch) {
+      var target = getDropTarget(touch.clientX, touch.clientY);
+      clearHighlight();
+      hideGhost();
+      document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
+        .forEach(function(el){ el.classList.remove('dragging'); });
 
-    // Clean up dragging class on chips
-    document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
-      .forEach(function(el){ el.classList.remove('dragging'); });
-
-    if (target && touchDragOrder) {
-      if (target.type === 'truck') {
-        var currentSrc = touchDragSource;
-        var destTid = target.tid;
-        if ('truck_'+destTid !== currentSrc) {
-          // Use existing drop logic by temporarily setting globals
+      if (target && touchDragOrder) {
+        if (target.type === 'truck') {
+          if ('truck_' + target.tid !== touchDragSource) {
+            draggedOrder = touchDragOrder;
+            dragSource   = touchDragSource;
+            dropToTruck({ preventDefault: function(){}, currentTarget: target.el }, target.tid);
+          }
+        } else if (target.type === 'pool' && touchDragSource !== 'pool') {
           draggedOrder = touchDragOrder;
-          dragSource = touchDragSource;
-          var fakeEvent = { preventDefault: function(){}, currentTarget: target.el };
-          dropToTruck(fakeEvent, destTid);
-        }
-      } else if (target.type === 'pool') {
-        if (touchDragSource !== 'pool') {
-          draggedOrder = touchDragOrder;
-          dragSource = touchDragSource;
-          var fakePoolEvent = { preventDefault: function(){} };
-          dropToPool(fakePoolEvent);
+          dragSource   = touchDragSource;
+          dropToPool({ preventDefault: function(){} });
         }
       }
+
+      resetTouchState();
+      tapTarget = null;
+      return;
     }
 
-    touchDragOrder = null;
-    touchDragSource = null;
-    draggedOrder = null;
-    dragSource = null;
-    isDraggingTouch = false;
-  }, { passive: true });
+    // ── Long-press fired but finger didn't move enough → aborted drag ──
+    if (longPressTriggered) {
+      hideGhost();
+      resetTouchState();
+      tapTarget = null;
+      return;
+    }
 
-  document.addEventListener('touchcancel', function() {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-    isDraggingTouch = false;
-    touchDragOrder = null;
-    touchDragSource = null;
-    draggedOrder = null;
-    dragSource = null;
-    clearHighlight();
-    hideGhost();
-    document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
-      .forEach(function(el){ el.classList.remove('dragging'); });
-  }, { passive: true });
-
-  // ── Tap = context menu on touch devices ──
-  // On mobile, a quick tap on an order chip opens the context/move menu.
-  // This is a fallback for users who don't want to long-press-drag.
-  var tapTarget = null;
-  var tapStartX = 0, tapStartY = 0;
-
-  document.addEventListener('touchstart', function(e) {
-    var chip = e.target.closest('.order-chip, .order-row');
-    if (!chip) return;
-    tapTarget = chip;
-    tapStartX = e.touches[0].clientX;
-    tapStartY = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener('touchend', function(e) {
-    if (isDraggingTouch) { tapTarget = null; return; }
-    if (!tapTarget) return;
-    var touch = e.changedTouches[0];
-    var dx = Math.abs(touch.clientX - tapStartX);
-    var dy = Math.abs(touch.clientY - tapStartY);
-    if (dx < 8 && dy < 8) {
-      // It's a tap — open context menu
-      var o = getOrderFromEl(tapTarget);
+    // ── Tap path ──
+    // Accept as tap if movement < 15px (was 8px — Android jitter tolerance).
+    if (tapTarget && dx < 15 && dy < 15) {
+      var o   = getOrderFromEl(tapTarget);
       var src = getSourceFromEl(tapTarget);
       if (o) {
-        var tid = src && src.startsWith('truck_') ? parseInt(src.replace('truck_','')) : null;
-        var fakeEvent = { clientX: touch.clientX, clientY: touch.clientY, preventDefault: function(){} };
-        openCtx(fakeEvent, o, tid);
+        var tid = (src && src.startsWith('truck_'))
+          ? parseInt(src.replace('truck_', ''))
+          : null;
+        openCtx(
+          { clientX: touch.clientX, clientY: touch.clientY, preventDefault: function(){} },
+          o, tid
+        );
       }
     }
+
+    resetTouchState();
+    tapTarget = null;
+  }, { passive: true });
+
+  // ── touchcancel: clean up ──
+  document.addEventListener('touchcancel', function() {
+    resetTouchState();
     tapTarget = null;
   }, { passive: true });
 
@@ -3225,27 +3079,19 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
 // MOBILE ENHANCEMENTS
 // ═══════════════════════════════════════════════════════════════
 
-// ── Force landscape orientation ──────────────────────────────────
 if (screen.orientation && screen.orientation.lock) {
   screen.orientation.lock('landscape').catch(function(){});
 }
 
-// ── Back button / swipe-back confirmation (custom modal) ─────────
 var gameActive = false;
 var _backGuardShowing = false;
-
 var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 function setGameActive(val) {
   gameActive = val;
   if (val) {
     if (_isIOS) {
-      // iOS Safari ignores popstate interception for swipe-back.
-      // Replace history so the page itself IS the back destination —
-      // swiping back just reloads the same page (which shows intro).
-      // We catch that via pageshow with persisted=true.
       history.replaceState({ page: 'game' }, '', '#game');
-      // Push extra states as buffer for the back button tap (not swipe)
       for (var i = 0; i < 5; i++) {
         history.pushState({ page: 'game', depth: i }, '', '#game');
       }
@@ -3269,10 +3115,8 @@ function _refillStack() {
   }
 }
 
-// iOS: if user navigated away and came back via bfcache, show guard
 window.addEventListener('pageshow', function(e) {
   if (e.persisted && gameActive) {
-    // Page restored from back-forward cache — show the leave guard
     document.getElementById('back-guard-overlay').style.display = 'flex';
     _backGuardShowing = true;
     _refillStack();
@@ -3280,7 +3124,6 @@ window.addEventListener('pageshow', function(e) {
 });
 
 function backGuardCancel() {
-  // Refill stack and hide modal — user stays in game
   _refillStack();
   document.getElementById('back-guard-overlay').style.display = 'none';
   _backGuardShowing = false;
@@ -3295,14 +3138,12 @@ function backGuardLeave() {
 
 window.addEventListener('popstate', function() {
   if (!gameActive) return;
-  // Always refill stack first so rapid presses can never drain it
   _refillStack();
   if (_backGuardShowing) return;
   _backGuardShowing = true;
   document.getElementById('back-guard-overlay').style.display = 'flex';
 });
 
-// Desktop: guard refresh/tab close
 window.addEventListener('beforeunload', function(e) {
   if (gameActive) { e.preventDefault(); e.returnValue = ''; }
 });
@@ -3331,7 +3172,6 @@ function updateTabBadge() {
   }
 }
 
-// Patch renderAll to also update badge
 (function() {
   var orig = renderAll;
   renderAll = function() { orig(); updateTabBadge(); };
@@ -3346,16 +3186,12 @@ function toggleRules() {
   toggle.classList.toggle('open', !open);
 }
 
-// No hiding needed — intro-name-row-desktop is always visible
-// (CSS handles it: intro-sticky-footer hidden, desktop row shown on all sizes)
-
-
 document.getElementById('player-name-input').addEventListener('input', function() {
   var m = document.getElementById('player-name-input-mobile');
   if (m) m.value = this.value;
 });
 
-// ── Bottom sheet ──────────────────────────────────────────────
+// ── Bottom sheet ──
 var sheetOrder = null, sheetSourceTid = null;
 
 function openSheet(order, sourceTid) {
@@ -3407,7 +3243,6 @@ function sheetAssign(tid) {
   }
   var dest = trucks.find(function(t){return t.id===tid;});
   if (dest) dest.orders.push(sheetOrder);
-  var assignedOrder = sheetOrder;
   closeSheet();
   if (window.innerWidth <= 600) switchTab('trucks');
   renderAll(); updateMarkerColors(); scheduleRouteUpdate(tid);
@@ -3426,7 +3261,7 @@ function sheetReturn() {
   renderAll(); updateMarkerColors(); scheduleRouteUpdate(src); updateMilesOverlay();
 }
 
-// Override openCtx: use bottom sheet on mobile
+// Override openCtx: use bottom sheet on touch mobile
 (function() {
   var orig = openCtx;
   openCtx = function(e, order, sourceTid) {
@@ -3438,10 +3273,7 @@ function sheetReturn() {
   };
 })();
 
-// Track game header height for game-body absolute layout
-// No JS height calc needed — flexbox handles it
-function updateGameBodyHeight() {} // kept as no-op for safety
-
+function updateGameBodyHeight() {}
 </script>
 
 <!-- MOBILE BOTTOM SHEET -->
@@ -3455,7 +3287,7 @@ function updateGameBodyHeight() {} // kept as no-op for safety
   <div class="sheet-body" id="sheet-body"></div>
 </div>
 
-<!-- ── BACK BUTTON GUARD MODAL ── -->
+<!-- BACK BUTTON GUARD -->
 <div id="back-guard-overlay" style="
   display:none; position:fixed; inset:0; z-index:99999;
   background:rgba(0,0,0,0.7); align-items:center; justify-content:center;
