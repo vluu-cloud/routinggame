@@ -608,9 +608,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 @media(hover:none){
   .order-chip,.order-row{
     -webkit-tap-highlight-color:transparent;
-    touch-action:none;
+    touch-action:pan-y;          /* allow vertical scroll; JS blocks it once drag starts */
     user-select:none;
     -webkit-user-select:none;
+    -webkit-touch-callout:none;  /* suppress iOS/Android long-press callout */
   }
 }
 
@@ -894,13 +895,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .btn-mv { font-size: 8px !important; }
   .add-truck-btn { padding: 4px !important; font-size: 10px !important; flex-shrink: 0; }
   .submit-btn { padding: 6px !important; font-size: 11px !important; flex-shrink: 0; }
-}
-/* Fix touch-action on chips so panels still scroll on swipe */
-@media (hover: none) {
-  .order-chip, .order-row {
-    -webkit-tap-highlight-color: transparent;
-    touch-action: pan-y !important; /* was: none — pan-y lets scroll through */
-  }
 }
 
 
@@ -3006,7 +3000,7 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
   var longPressTimer = null;
   var isDraggingTouch = false;
   var lastDropTarget = null;
-  var touchStartX = 0, touchStartY = 0; // shared across handlers for jitter threshold
+  var touchStartX = 0, touchStartY = 0; // shared for jitter threshold
 
   function getOrderFromEl(el) {
     var chip = el.closest('.order-chip, .order-row');
@@ -3083,10 +3077,9 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
   document.addEventListener('touchstart', function(e) {
     var chip = e.target.closest('.order-chip, .order-row');
     if (!chip) return;
-    // Prevent Android's native long-press context menu and text selection
-    // from hijacking the touch stream before our timer fires.
-    e.preventDefault();
-
+    // Do NOT preventDefault here — that would block vertical scrolling.
+    // user-select:none + -webkit-touch-callout:none in CSS handle Android's
+    // long-press text/callout menus without needing to block the event.
     var touch = e.touches[0];
     touchStartX = touch.clientX;
     touchStartY = touch.clientY;
@@ -3110,12 +3103,12 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
       // Brief haptic if available
       if (navigator.vibrate) navigator.vibrate(40);
     }, 400);
-  }, { passive: false }); // Must be false so preventDefault() works on Android
+  }, { passive: true });
 
   document.addEventListener('touchmove', function(e) {
     if (longPressTimer && !isDraggingTouch) {
-      // Only cancel long press if finger moved more than 10px — Android
-      // produces small jitter that would otherwise kill the timer immediately.
+      // Only cancel long-press if finger moved more than 10px — Android has
+      // natural jitter that would otherwise kill the timer immediately.
       var t = e.touches[0];
       var dx = Math.abs(t.clientX - touchStartX);
       var dy = Math.abs(t.clientY - touchStartY);
@@ -3125,7 +3118,7 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
       }
     }
     if (!isDraggingTouch) return;
-    e.preventDefault(); // prevent scroll during drag
+    e.preventDefault(); // block scroll while actively dragging
 
     var touch = e.touches[0];
     moveGhost(touch.clientX, touch.clientY);
@@ -3204,7 +3197,7 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
     tapTarget = chip;
     tapStartX = e.touches[0].clientX;
     tapStartY = e.touches[0].clientY;
-  }, { passive: false });
+  }, { passive: true });
 
   document.addEventListener('touchend', function(e) {
     if (isDraggingTouch) { tapTarget = null; return; }
