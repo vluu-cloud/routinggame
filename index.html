@@ -609,6 +609,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   .order-chip,.order-row{
     -webkit-tap-highlight-color:transparent;
     touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
   }
 }
 
@@ -3004,6 +3006,7 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
   var longPressTimer = null;
   var isDraggingTouch = false;
   var lastDropTarget = null;
+  var touchStartX = 0, touchStartY = 0; // shared across handlers for jitter threshold
 
   function getOrderFromEl(el) {
     var chip = el.closest('.order-chip, .order-row');
@@ -3080,9 +3083,13 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
   document.addEventListener('touchstart', function(e) {
     var chip = e.target.closest('.order-chip, .order-row');
     if (!chip) return;
+    // Prevent Android's native long-press context menu and text selection
+    // from hijacking the touch stream before our timer fires.
+    e.preventDefault();
 
     var touch = e.touches[0];
-    var startX = touch.clientX, startY = touch.clientY;
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
 
     longPressTimer = setTimeout(function() {
       var o = getOrderFromEl(chip);
@@ -3098,19 +3105,24 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
       dragSource = src;
 
       chip.classList.add('dragging');
-      showGhost(o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs', startX, startY);
+      showGhost(o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs', touchStartX, touchStartY);
 
       // Brief haptic if available
       if (navigator.vibrate) navigator.vibrate(40);
     }, 400);
-  }, { passive: true });
+  }, { passive: false }); // Must be false so preventDefault() works on Android
 
   document.addEventListener('touchmove', function(e) {
     if (longPressTimer && !isDraggingTouch) {
-      // Cancel long press if finger moved too much
+      // Only cancel long press if finger moved more than 10px — Android
+      // produces small jitter that would otherwise kill the timer immediately.
       var t = e.touches[0];
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
+      var dx = Math.abs(t.clientX - touchStartX);
+      var dy = Math.abs(t.clientY - touchStartY);
+      if (dx > 10 || dy > 10) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
     }
     if (!isDraggingTouch) return;
     e.preventDefault(); // prevent scroll during drag
@@ -3192,7 +3204,7 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
     tapTarget = chip;
     tapStartX = e.touches[0].clientX;
     tapStartY = e.touches[0].clientY;
-  }, { passive: true });
+  }, { passive: false });
 
   document.addEventListener('touchend', function(e) {
     if (isDraggingTouch) { tapTarget = null; return; }
