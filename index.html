@@ -945,72 +945,99 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   GAME SCREEN COMPACT SIZING
-   The global accessibility overrides above use !important but only
-   class-level specificity. Using #screen-game prefix gives ID-level
-   specificity (100 points vs 10), so these rules win regardless of
-   order — no matter what comes before. This ensures the game panels
-   stay compact enough to show ~3 orders and ~2 trucks without
-   scrolling, while the intro/results/leaderboard screens keep their
-   larger, more readable type.
+   GAME SCREEN SIZING & LAYOUT FIXES
+   #screen-game prefix = ID specificity (100 pts) vs global class
+   rules (10 pts), so these always win regardless of order.
 
-   min-height:0 on the panels: grid children default to min-height:auto
-   which lets them grow beyond the grid cell — the panel never
-   overflows so overflow-y:auto never triggers. Setting min-height:0
-   caps the panel at the cell height and makes it actually scroll.
-
-   sticky submit-btn: always pinned to the bottom of the trucks panel
-   so it's never hidden even when the truck list is long.
+   Key structural fixes:
+   1. game-body uses flex:1 so height tracks the actual header size
+      (the global override changed header to 60px but game-body still
+      used calc(100vh - 52px), clipping 8px off the bottom)
+   2. orders-panel gets min-height:0 so the grid cell constrains it
+      and overflow-y:auto actually scrolls
+   3. trucks-panel is flex-column with overflow:hidden; only the
+      #trucks-section inner div scrolls — add-truck and submit buttons
+      sit outside the scroll area and are always visible
+   4. Drop zones are finger-sized (80px min)
 ═══════════════════════════════════════════════════════════════ */
 
-/* Scroll fix */
-#screen-game .orders-panel,
-#screen-game .trucks-panel { min-height: 0 !important; }
+/* 1. Fix game-body height.
+      The global override sets the header to 60px but game-body used calc(100vh-52px),
+      clipping 8px. Explicit 60px here matches reality. */
+#screen-game .game-body {
+  height: calc(100vh - 60px) !important;
+  min-height: 0 !important;
+}
 
-/* Submit button — always visible at the bottom of the trucks panel */
+/* 2. Orders panel — min-height:0 lets the grid cell constrain it so
+      overflow-y:auto actually creates a scroll container. */
+#screen-game .orders-panel { min-height: 0 !important; }
+
+/* 3. Trucks panel structural fix.
+      Problem with overflow:hidden: it clips the submit button at the bottom.
+      Fix: disable panel-level scroll (overflow:visible), let game-body's
+      overflow:hidden do the visual clipping, and only scroll #trucks-section.
+      Buttons sit as flex siblings OUTSIDE the scroll area — always visible. */
+#screen-game .trucks-panel {
+  overflow: visible !important;   /* game-body clips; panel must not clip buttons */
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+#screen-game #trucks-section {
+  flex: 1 1 0 !important;         /* grows to fill panel minus button heights */
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  -webkit-overflow-scrolling: touch;
+}
+#screen-game .add-truck-btn { flex-shrink: 0 !important; }
 #screen-game .submit-btn {
-  position: sticky !important;
-  bottom: 0 !important;
-  margin-top: 4px !important;
-  z-index: 5 !important;
-  box-shadow: 0 -8px 20px rgba(8,13,24,0.95) !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  bottom: auto !important;
+  margin-top: 2px !important;
+  box-shadow: none !important;
+  font-size: 17px !important;
+  padding: 14px !important;
 }
 
 /* ── Order pool ── */
-#screen-game .pool-topbar  { padding: 5px 2px 2px !important; }
-#screen-game .pool-title   { font-size: 14px !important; }
-#screen-game .pool-badge   { font-size: 14px !important; }
-#screen-game .pool-search  { font-size: 15px !important; padding: 6px 10px !important; }
-#screen-game .pool-select  { font-size: 14px !important; padding: 5px 7px !important; }
-#screen-game .filter-btn   { font-size: 13px !important; padding: 4px 9px !important; }
+#screen-game .pool-topbar  { padding: 6px 2px 2px !important; }
+#screen-game .pool-title   { font-size: 15px !important; }
+#screen-game .pool-badge   { font-size: 15px !important; }
+#screen-game .pool-search  { font-size: 16px !important; padding: 8px 10px !important; }
+#screen-game .pool-select  { font-size: 15px !important; padding: 6px 8px !important; }
+#screen-game .filter-btn   { font-size: 14px !important; padding: 5px 10px !important; }
 
-/* ── Order chips ── */
-#screen-game .order-chip   { font-size: 15px !important; padding: 7px 10px !important; }
+/* ── Order chips — readable but compact enough for 3 to show ── */
+#screen-game .order-chip   { font-size: 15px !important; padding: 9px 11px !important; }
 #screen-game .chip-id      { font-size: 13px !important; }
-#screen-game .chip-store   { font-size: 16px !important; }
-#screen-game .chip-sub     { font-size: 13px !important; }
-#screen-game .cflag        { font-size: 12px !important; padding: 2px 6px !important; }
+#screen-game .chip-store   { font-size: 17px !important; }
+#screen-game .chip-sub     { font-size: 14px !important; }
+#screen-game .cflag        { font-size: 13px !important; padding: 2px 7px !important; }
 
 /* ── Truck cards ── */
-#screen-game .truck-head   { padding: 8px 11px !important; }
-#screen-game .truck-name   { font-size: 16px !important; }
-#screen-game .truck-stats  { font-size: 13px !important; }
-#screen-game .truck-miles  { font-size: 14px !important; }
-#screen-game .btn-rm       { font-size: 17px !important; }
-#screen-game .cap-row      { padding: 4px 9px !important; }
-#screen-game .cap-label    { font-size: 12px !important; min-width: 46px !important; }
-#screen-game .cap-pct      { font-size: 12px !important; }
-#screen-game .drop-zone    { min-height: 48px !important; padding: 8px 10px !important; }
-#screen-game .drop-hint    { font-size: 14px !important; }
-#screen-game .order-row    { font-size: 14px !important; padding: 7px 9px !important; }
-#screen-game .or-store     { font-size: 14px !important; }
-#screen-game .or-cases,
-#screen-game .or-weight    { font-size: 13px !important; }
-#screen-game .add-truck-btn { font-size: 15px !important; padding: 10px !important; }
+#screen-game .truck-head   { padding: 9px 12px !important; }
+#screen-game .truck-name   { font-size: 17px !important; }
+#screen-game .truck-stats  { font-size: 14px !important; }
+#screen-game .truck-miles  { font-size: 15px !important; }
+#screen-game .btn-rm       { font-size: 18px !important; }
+#screen-game .cap-row      { padding: 5px 10px !important; }
+#screen-game .cap-label    { font-size: 13px !important; min-width: 50px !important; }
+#screen-game .cap-pct      { font-size: 13px !important; }
 
-/* ── Landscape phones: restore the ultra-compact landscape sizes
-   (same #screen-game specificity but inside a media query that
-   only activates when needed, and placed last so they win) ── */
+/* 4. Drop zones — finger-sized target, always easy to hit */
+#screen-game .drop-zone    { min-height: 80px !important; padding: 10px 11px !important; }
+#screen-game .drop-hint    { font-size: 15px !important; }
+
+/* Orders inside truck */
+#screen-game .order-row    { font-size: 15px !important; padding: 9px 10px !important; }
+#screen-game .or-store     { font-size: 15px !important; }
+#screen-game .or-cases,
+#screen-game .or-weight    { font-size: 14px !important; }
+#screen-game .add-truck-btn { font-size: 16px !important; padding: 11px !important; }
+
+/* ── Landscape phones: compact but still usable ── */
 @media (max-height: 500px) and (orientation: landscape) {
   #screen-game .order-chip  { font-size: 11px !important; padding: 2px 4px !important; }
   #screen-game .chip-id     { font-size: 9px  !important; }
@@ -1027,7 +1054,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   #screen-game .cap-row     { padding: 1px 5px !important; }
   #screen-game .cap-label   { font-size: 8px  !important; min-width: 22px !important; }
   #screen-game .cap-pct     { font-size: 8px  !important; }
-  #screen-game .drop-zone   { min-height: 18px !important; padding: 2px 4px !important; }
+  #screen-game .drop-zone   { min-height: 28px !important; padding: 3px 4px !important; }
   #screen-game .drop-hint   { font-size: 9px  !important; }
   #screen-game .order-row   { font-size: 9px  !important; padding: 2px 3px !important; }
   #screen-game .or-store    { font-size: 9px  !important; }
