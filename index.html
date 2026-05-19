@@ -946,100 +946,126 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
 /* ═══════════════════════════════════════════════════════════════
    GAME SCREEN SIZING & LAYOUT FIXES
-   #screen-game prefix = ID specificity (100 pts) vs global class
-   rules (10 pts), so these always win regardless of order.
+   #screen-game prefix = ID specificity, always wins over global rules.
 
-   Key structural fixes:
-   1. game-body uses flex:1 so height tracks the actual header size
-      (the global override changed header to 60px but game-body still
-      used calc(100vh - 52px), clipping 8px off the bottom)
-   2. orders-panel gets min-height:0 so the grid cell constrains it
-      and overflow-y:auto actually scrolls
-   3. trucks-panel is flex-column with overflow:hidden; only the
-      #trucks-section inner div scrolls — add-truck and submit buttons
-      sit outside the scroll area and are always visible
-   4. Drop zones are finger-sized (80px min)
+   Height: screen uses 100svh (excludes Android URL bar) with 100vh
+   fallback. game-body uses flex:1 so no pixel calc needed.
+
+   Submit button: the HTML now has a .trucks-scroll-inner wrapper that
+   scrolls. The submit button is a flex sibling OUTSIDE that wrapper —
+   pure DOM structure, no overflow tricks, works on every platform.
 ═══════════════════════════════════════════════════════════════ */
 
-/* 1. Fix game-body height.
-      The global override sets the header to 60px but game-body used calc(100vh-52px),
-      clipping 8px. Explicit 60px here matches reality. */
-#screen-game .game-body {
-  height: calc(100vh - 60px) !important;
+/* Screen height — svh excludes Android browser chrome.
+   MUST use #screen-game.screen.active, NOT plain #screen-game, because
+   display:flex !important on #screen-game would override .screen{display:none}
+   and make the game screen permanently visible even on other screens. */
+#screen-game.screen.active {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  height: 100svh !important;
+  overflow: hidden !important;
+}
+#screen-game.screen.active .game-header { flex-shrink: 0 !important; }
+#screen-game.screen.active .game-body   {
+  flex: 1 1 0 !important;
   min-height: 0 !important;
+  height: auto !important;   /* override the stale calc(100vh-52px) */
 }
 
-/* 2. Orders panel — min-height:0 lets the grid cell constrain it so
-      overflow-y:auto actually creates a scroll container. */
+/* Orders panel scrolls within its grid cell */
 #screen-game .orders-panel { min-height: 0 !important; }
 
-/* 3. Trucks panel structural fix.
-      Problem with overflow:hidden: it clips the submit button at the bottom.
-      Fix: disable panel-level scroll (overflow:visible), let game-body's
-      overflow:hidden do the visual clipping, and only scroll #trucks-section.
-      Buttons sit as flex siblings OUTSIDE the scroll area — always visible. */
+/* Trucks panel — panel itself scrolls (overflow-y:auto from base CSS).
+   submit-btn is position:sticky so it always floats at the bottom of
+   the scroll viewport. Works on desktop, iOS Safari, and Android Chrome. */
 #screen-game .trucks-panel {
-  overflow: visible !important;   /* game-body clips; panel must not clip buttons */
+  overflow-y: auto !important;
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
+  padding: 8px !important;
+  gap: 7px !important;
 }
-#screen-game #trucks-section {
-  flex: 1 1 0 !important;         /* grows to fill panel minus button heights */
-  overflow-y: auto !important;
-  min-height: 0 !important;
-  -webkit-overflow-scrolling: touch;
-}
-#screen-game .add-truck-btn { flex-shrink: 0 !important; }
+/* Submit button — sticky inside the scrolling panel */
 #screen-game .submit-btn {
+  position: sticky !important;
+  bottom: 0 !important;
   flex-shrink: 0 !important;
-  position: relative !important;
-  bottom: auto !important;
   margin-top: 2px !important;
-  box-shadow: none !important;
-  font-size: 17px !important;
-  padding: 14px !important;
+  font-size: 18px !important;
+  padding: 15px !important;
+  box-shadow: 0 -8px 16px rgba(8,13,24,0.9) !important;
+  z-index: 2 !important;
 }
 
 /* ── Order pool ── */
-#screen-game .pool-topbar  { padding: 6px 2px 2px !important; }
-#screen-game .pool-title   { font-size: 15px !important; }
-#screen-game .pool-badge   { font-size: 15px !important; }
+#screen-game .pool-topbar  { padding: 6px 4px 2px !important; }
+#screen-game .pool-title   { font-size: 16px !important; }
+#screen-game .pool-badge   { font-size: 16px !important; }
 #screen-game .pool-search  { font-size: 16px !important; padding: 8px 10px !important; }
 #screen-game .pool-select  { font-size: 15px !important; padding: 6px 8px !important; }
 #screen-game .filter-btn   { font-size: 14px !important; padding: 5px 10px !important; }
 
-/* ── Order chips — readable but compact enough for 3 to show ── */
-#screen-game .order-chip   { font-size: 15px !important; padding: 9px 11px !important; }
-#screen-game .chip-id      { font-size: 13px !important; }
-#screen-game .chip-store   { font-size: 17px !important; }
-#screen-game .chip-sub     { font-size: 14px !important; }
-#screen-game .cflag        { font-size: 13px !important; padding: 2px 7px !important; }
+/* ── Order chips — 3 should fit without scrolling ── */
+#screen-game .order-chip   { padding: 10px 12px !important; }
+#screen-game .chip-id      { font-size: 14px !important; }
+#screen-game .chip-store   { font-size: 18px !important; font-weight: 700 !important; }
+#screen-game .chip-sub     { font-size: 15px !important; }
+#screen-game .cflag        { font-size: 14px !important; padding: 3px 8px !important; }
 
-/* ── Truck cards ── */
-#screen-game .truck-head   { padding: 9px 12px !important; }
-#screen-game .truck-name   { font-size: 17px !important; }
-#screen-game .truck-stats  { font-size: 14px !important; }
+/* ── Truck cards — 2 should fit without scrolling ── */
+#screen-game .truck-head   { padding: 10px 12px !important; }
+#screen-game .truck-name   { font-size: 18px !important; }
+#screen-game .truck-stats  { font-size: 15px !important; }
 #screen-game .truck-miles  { font-size: 15px !important; }
 #screen-game .btn-rm       { font-size: 18px !important; }
 #screen-game .cap-row      { padding: 5px 10px !important; }
-#screen-game .cap-label    { font-size: 13px !important; min-width: 50px !important; }
-#screen-game .cap-pct      { font-size: 13px !important; }
-
-/* 4. Drop zones — finger-sized target, always easy to hit */
-#screen-game .drop-zone    { min-height: 80px !important; padding: 10px 11px !important; }
-#screen-game .drop-hint    { font-size: 15px !important; }
-
-/* Orders inside truck */
-#screen-game .order-row    { font-size: 15px !important; padding: 9px 10px !important; }
-#screen-game .or-store     { font-size: 15px !important; }
+#screen-game .cap-label    { font-size: 14px !important; min-width: 52px !important; }
+#screen-game .cap-pct      { font-size: 14px !important; }
+#screen-game .drop-zone    { min-height: 80px !important; padding: 10px 12px !important; }
+#screen-game .drop-hint    { font-size: 16px !important; }
+#screen-game .order-row    { font-size: 16px !important; padding: 10px 11px !important; }
+#screen-game .or-store     { font-size: 16px !important; }
 #screen-game .or-cases,
-#screen-game .or-weight    { font-size: 14px !important; }
-#screen-game .add-truck-btn { font-size: 16px !important; padding: 11px !important; }
+#screen-game .or-weight    { font-size: 15px !important; }
+#screen-game .add-truck-btn { font-size: 17px !important; padding: 12px !important; }
 
-/* ── Landscape phones: compact but still usable ── */
+/* ── Results page: bump up the smaller analysis sections ── */
+#screen-results .results-info h1   { font-size: 30px !important; }
+#screen-results .result-grade      { font-size: 22px !important; }
+#screen-results .results-sub       { font-size: 19px !important; }
+#screen-results .mc-num            { font-size: 36px !important; }
+#screen-results .mc-label          { font-size: 17px !important; }
+#screen-results .score-row         { font-size: 18px !important; padding: 10px 0 !important; }
+#screen-results .score-row-pts     { font-size: 18px !important; }
+#screen-results .score-row-label   { font-size: 17px !important; }
+#screen-results .metric-row        { font-size: 18px !important; }
+#screen-results .metric-key        { font-size: 18px !important; }
+#screen-results .cc-title          { font-size: 16px !important; }
+#screen-results .ob-store          { font-size: 16px !important; }
+#screen-results .ob-num            { font-size: 14px !important; }
+#screen-results .ob-truck          { font-size: 15px !important; }
+#screen-results .oc-store          { font-size: 15px !important; }
+#screen-results .oc-table td,
+#screen-results .oc-table th       { font-size: 14px !important; padding: 8px 10px !important; }
+#screen-results .mr-route-name     { font-size: 16px !important; }
+#screen-results .mr-miles-val      { font-size: 18px !important; }
+#screen-results .mr-miles-lbl      { font-size: 13px !important; }
+#screen-results .analysis-ai-body  { font-size: 17px !important; line-height: 1.9 !important; }
+#screen-results .sys-ov-stops      { font-size: 15px !important; }
+#screen-results .sys-ov-num        { font-size: 15px !important; }
+#screen-results .sys-ov-match      { font-size: 14px !important; }
+#screen-results .diff-header       { font-size: 19px !important; }
+#screen-results .ob-insight        { font-size: 16px !important; line-height: 1.7 !important; }
+#screen-results .oc-why-box        { font-size: 15px !important; line-height: 1.7 !important; }
+#screen-results .lb-row            { padding: 18px 22px !important; }
+
+/* ── Landscape phones: ultra-compact to fit small screens ── */
 @media (max-height: 500px) and (orientation: landscape) {
-  #screen-game .order-chip  { font-size: 11px !important; padding: 2px 4px !important; }
+  #screen-game .submit-btn  { margin: 1px 3px 2px !important; font-size: 11px !important; padding: 6px !important; box-shadow: none !important; }
+  #screen-game .order-chip  { padding: 2px 4px !important; }
   #screen-game .chip-id     { font-size: 9px  !important; }
   #screen-game .chip-store  { font-size: 11px !important; }
   #screen-game .chip-sub    { font-size: 9px  !important; }
@@ -1061,7 +1087,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   #screen-game .or-cases,
   #screen-game .or-weight   { font-size: 8px  !important; }
   #screen-game .add-truck-btn { font-size: 10px !important; padding: 4px !important; }
-  #screen-game .submit-btn  { font-size: 11px !important; padding: 6px !important; }
 }
 </style>
 </head>
@@ -1119,21 +1144,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <div class="rule-row"><span class="rule-icon">⚡</span><div><strong>Speed bonus</strong><span class="rule-pts star">50 pts</span> — Full points if you finish with 4+ minutes left. Points drop linearly from there down to 0 at time's up.
         <div style="margin-top:8px;border:1px solid var(--border);border-radius:7px;overflow:hidden;font-size:13px;"><div style="display:grid;grid-template-columns:1fr 1fr;background:var(--bg3);padding:4px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--text3);text-transform:uppercase;font-size:11px;letter-spacing:.7px;"><span>Time remaining</span><span style="text-align:right">Speed pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);background:rgba(15,186,128,0.06);"><span style="color:var(--text2);">4:00+ remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green);">50 pts 🏆</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">3:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--green);">38 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">2:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--amber);">25 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;border-bottom:1px solid var(--border);"><span style="color:var(--text2);">1:00 remaining</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--text3);">13 pts</span></div><div style="display:grid;grid-template-columns:1fr 1fr;padding:5px 10px;"><span style="color:var(--text2);">0:00 (time's up)</span><span style="text-align:right;font-family:var(--mono);font-weight:700;color:var(--red);">0 pts</span></div></div>
       </div></div>
-    </div>
       </div></div>
+    </div>
     <div class="name-row" id="intro-name-row-desktop">
       <input type="text" id="player-name-input" placeholder="Enter your name…" maxlength="24">
       <button class="btn-start" onclick="startGame()">Start →</button>
     </div>
     <button class="btn-ghost" id="intro-lb-btn-desktop" onclick="showLeaderboard()">📋 View leaderboard</button>
-    </div>
-    <div class="intro-sticky-footer">
-      <div class="name-row" style="margin-bottom:0">
-        <input type="text" id="player-name-input-mobile" placeholder="Enter your name…" maxlength="24"
-          oninput="document.getElementById('player-name-input').value=this.value">
-        <button class="btn-start" onclick="startGame()">Start →</button>
-      </div>
-      <button class="btn-ghost" onclick="showLeaderboard()">📋 View leaderboard</button>
     </div>
   </div>
 </div>
@@ -1146,22 +1163,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
     <span class="gh-brand">🚛 Route <span>Builder</span></span>
     <span class="gh-player" id="gh-player">Player</span>
     <div class="gh-stats">
-      <div class="gh-stat">
-        <div class="gh-val" id="stat-assigned">0/25</div>
-        <div class="gh-lab">Assigned</div>
-      </div>
-      <div class="gh-stat">
-        <div class="gh-val" id="stat-trucks">0</div>
-        <div class="gh-lab">Trucks</div>
-      </div>
-      <div class="gh-stat">
-        <div class="gh-val" id="stat-miles">— mi</div>
-        <div class="gh-lab">Your miles</div>
-      </div>
-      <div class="gh-stat">
-        <div class="gh-val" id="stat-violations">0</div>
-        <div class="gh-lab">Violations</div>
-      </div>
+      <div class="gh-stat"><div class="gh-val" id="stat-assigned">0/25</div><div class="gh-lab">Assigned</div></div>
+      <div class="gh-stat"><div class="gh-val" id="stat-trucks">0</div><div class="gh-lab">Trucks</div></div>
+      <div class="gh-stat"><div class="gh-val" id="stat-miles">— mi</div><div class="gh-lab">Your miles</div></div>
+      <div class="gh-stat"><div class="gh-val" id="stat-violations">0</div><div class="gh-lab">Violations</div></div>
     </div>
     <div class="timer" id="timer">5:00</div>
   </div>
@@ -1185,7 +1190,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         </select>
       </div>
       <div class="pool-filters">
-        <button class="filter-btn" id="f-p9" onclick="toggleFilter('p9')" title="P9 = Priority 9 · Must arrive 4:00–8:00am · Departs ~1:30am">P9</button>
+        <button class="filter-btn" id="f-p9" onclick="toggleFilter('p9')">P9</button>
         <button class="filter-btn" id="f-48" onclick="toggleFilter('48')">48'</button>
         <button class="filter-btn" id="f-heavy" onclick="toggleFilter('heavy')">Heavy 10k+</button>
       </div>
@@ -1201,19 +1206,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 
     <!-- MAP PANEL -->
     <div class="map-panel" id="tab-map">
-      <div id="mob-miles-bar" style="
-        display:none;
-        height:18px; line-height:18px;
-        background:rgba(0,0,0,0.55);
-        font-size:9px; font-weight:700; font-family:var(--mono);
-        color:#e5e7eb; padding:0 6px; gap:8px;
-        align-items:center; flex-shrink:0;
-        white-space:nowrap; overflow:hidden;
-        border-bottom:1px solid var(--border);
-      ">
-        <span style="color:var(--text3)">OPT:</span><span id="mob-opt">—</span>
-        &nbsp;·&nbsp;
-        <span style="color:var(--text3)">YOURS:</span><span id="mob-yours">—</span>
+      <div id="mob-miles-bar" style="display:none;height:18px;line-height:18px;background:rgba(0,0,0,0.55);font-size:9px;font-weight:700;font-family:var(--mono);color:#e5e7eb;padding:0 6px;gap:8px;align-items:center;flex-shrink:0;white-space:nowrap;overflow:hidden;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text3)">OPT:</span><span id="mob-opt">—</span>&nbsp;·&nbsp;<span style="color:var(--text3)">YOURS:</span><span id="mob-yours">—</span>
       </div>
       <div id="game-map" style="flex:1;min-height:0;"></div>
       <div class="map-overlay miles-overlay">
@@ -1233,12 +1227,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
       <span class="tab-icon">📦</span><span>Orders</span>
       <span class="tab-badge" id="tab-orders-badge" style="display:none">0</span>
     </button>
-    <button class="tab-btn" id="tabbtn-trucks" onclick="switchTab('trucks')">
-      <span class="tab-icon">🚛</span><span>Trucks</span>
-    </button>
-    <button class="tab-btn" id="tabbtn-map" onclick="switchTab('map')">
-      <span class="tab-icon">🗺️</span><span>Map</span>
-    </button>
+    <button class="tab-btn" id="tabbtn-trucks" onclick="switchTab('trucks')"><span class="tab-icon">🚛</span><span>Trucks</span></button>
+    <button class="tab-btn" id="tabbtn-map" onclick="switchTab('map')"><span class="tab-icon">🗺️</span><span>Map</span></button>
   </nav>
 </div>
 
@@ -1258,9 +1248,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div class="results-sub" id="results-sub"></div>
       </div>
     </div>
-
     <div class="miles-result-card">
-      <h3>🛣️ Route Efficiency (primary metric)</h3>
+      <h3>🛣️ Route Efficiency</h3>
       <div class="miles-compare">
         <div class="mc-item"><div class="mc-num" id="r-your-miles">—</div><div class="mc-label">Your miles</div></div>
         <div class="mc-vs">vs</div>
@@ -1273,21 +1262,19 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div class="mc-eff-label"><span>0%</span><span>Optimal = 100%</span></div>
       </div>
     </div>
-
     <div class="score-breakdown" id="score-breakdown"></div>
     <div class="compare-grid" id="compare-grid"></div>
     <div id="order-comparison-section" style="margin-bottom:12px;"></div>
-
     <div class="analysis-section" id="analysis-section">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
         <div>
           <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">🚛 Your Routes</div>
-          <div id="results-map-user" style="width:100%;height:480px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);"></div>
+          <div id="results-map-user" style="width:100%;height:380px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);"></div>
           <div id="legend-user" style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 4px 0;font-size:12px;"></div>
         </div>
         <div>
           <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">✅ System Routes</div>
-          <div id="results-map-system" style="width:100%;height:480px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);"></div>
+          <div id="results-map-system" style="width:100%;height:380px;border-radius:10px;overflow:hidden;background:var(--bg2);border:1px solid var(--border);"></div>
           <div id="legend-system" style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 4px 0;font-size:12px;"></div>
         </div>
       </div>
@@ -1297,7 +1284,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
         <div id="analysis-ai-body" class="analysis-ai-body"></div>
       </div>
     </div>
-
     <div class="results-actions">
       <button class="btn-secondary" onclick="goBack()">← Try again</button>
       <button class="btn-start" onclick="showLeaderboard()">🏆 Leaderboard</button>
@@ -1325,148 +1311,67 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// 1. CONSTANTS & GEOGRAPHIC DATA
+// CONSTANTS & DATA
 // ═══════════════════════════════════════════════════════════════
 const DEPOT = { id:'depot', lat:38.5063, lng:-121.4192, name:'DC · Sacramento, CA' };
-
 const STORE_COORDS = {
-  '0010': { lat:38.4404, lng:-122.7141 },
-  '0011': { lat:37.9479, lng:-122.0608 },
-  '0065': { lat:37.9619, lng:-122.3425 },
-  '0166': { lat:38.1074, lng:-122.5697 },
-  '0181': { lat:37.9779, lng:-122.0311 },
-  '0242': { lat:37.9358, lng:-122.3477 },
-  '0268': { lat:38.0280, lng:-121.8847 },
-  '0269': { lat:37.9977, lng:-121.7128 },
-  '0283': { lat:38.1044, lng:-122.2738 },
-  '0440': { lat:37.9313, lng:-121.6957 },
-  '0459': { lat:37.9735, lng:-122.5311 },
-  '0462': { lat:38.5477, lng:-122.8144 },
+  '0010':{lat:38.4404,lng:-122.7141},'0011':{lat:37.9479,lng:-122.0608},
+  '0065':{lat:37.9619,lng:-122.3425},'0166':{lat:38.1074,lng:-122.5697},
+  '0181':{lat:37.9779,lng:-122.0311},'0242':{lat:37.9358,lng:-122.3477},
+  '0268':{lat:38.0280,lng:-121.8847},'0269':{lat:37.9977,lng:-121.7128},
+  '0283':{lat:38.1044,lng:-122.2738},'0440':{lat:37.9313,lng:-121.6957},
+  '0459':{lat:37.9735,lng:-122.5311},'0462':{lat:38.5477,lng:-122.8144},
 };
-
 const STORE_NAMES = {
-  '0010':'Santa Rosa','0011':'Pleasant Hill','0065':'San Pablo',
-  '0166':'Novato','0181':'Concord','0242':'Richmond','0268':'Buchanan',
-  '0269':'Oakley','0283':'W Vallejo','0440':'Brentwood',
-  '0459':'San Rafael','0462':'Windsor',
+  '0010':'Santa Rosa','0011':'Pleasant Hill','0065':'San Pablo','0166':'Novato',
+  '0181':'Concord','0242':'Richmond','0268':'Buchanan','0269':'Oakley',
+  '0283':'W Vallejo','0440':'Brentwood','0459':'San Rafael','0462':'Windsor',
 };
-
 const STORE_ABBR = {
   '0010':'SRo','0011':'PH','0065':'Pb','0166':'Nv','0181':'Cn','0242':'Ri',
   '0268':'Bu','0269':'Ok','0283':'WV','0440':'Bt','0459':'Ra','0462':'Wn',
 };
-
-// ═══════════════════════════════════════════════════════════════
-// WINDOW FEASIBILITY HELPERS
-// ═══════════════════════════════════════════════════════════════
-function haversineKm(lat1, lon1, lat2, lon2) {
-  const R = 6371, toR = Math.PI/180;
-  const dLat = (lat2-lat1)*toR, dLon = (lon2-lon1)*toR;
-  const sdLat = Math.sin(dLat/2), sdLon = Math.sin(dLon/2);
-  const a = sdLat*sdLat + Math.cos(lat1*toR)*Math.cos(lat2*toR)*sdLon*sdLon;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-function roadKm(a, b) { return haversineKm(a.lat, a.lng, b.lat, b.lng) * 1.3; }
-
-function checkWindowFeasibility(truckOrders) {
-  const SPEED_KMH = 80, SERVICE_MIN = 45;
-  const storeIds = [...new Set(truckOrders.map(o=>o.store))];
-  if (storeIds.length <= 1) return { ok:true, violations:[], waitMins:0 };
-  const stores = storeIds.map(id => {
-    const o = truckOrders.find(o=>o.store===id);
-    return { id, name:o.storeName, winOpen:o.winOpen, winClose:o.winClose, coords:STORE_COORDS[id] };
-  });
-  const perms = arr => arr.length<=1 ? [arr] : arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)]).map(p=>[v,...p]));
-  let best = null;
-  for (const ordering of perms(stores)) {
-    const viols = []; let wait = 0; let cur = DEPOT; let t;
-    const distFirst = roadKm(cur, ordering[0].coords);
-    t = ordering[0].winOpen;
-    cur = ordering[0].coords;
-    t += SERVICE_MIN;
-    let feasible = true;
-    for (let i=1; i<ordering.length; i++) {
-      const s = ordering[i];
-      const travel = (roadKm(cur, s.coords)/SPEED_KMH)*60;
-      const arrival = t + travel;
-      if (arrival > s.winClose) {
-        feasible = false;
-        const ah = Math.floor(arrival/60), am = Math.round(arrival%60);
-        viols.push({ store:s.name, msg:`Arrives ~${ah}:${String(am).padStart(2,'0')} but window closes ${s.winClose/60}:00` });
-      }
-      if (arrival < s.winOpen) { wait += s.winOpen - arrival; t = s.winOpen; }
-      else t = arrival;
-      t += SERVICE_MIN;
-      cur = s.coords;
-    }
-    if (feasible && (!best || wait < best.waitMins)) best = { ok:true, violations:[], waitMins:wait };
-    else if (!feasible && !best) best = { ok:false, violations:viols, waitMins:0 };
-  }
-  return best || { ok:true, violations:[], waitMins:0 };
-}
-
-function windowBadgeColor(winOpen) {
-  if (winOpen <= 4*60) return '#fca5a5';
-  if (winOpen <= 6*60) return '#fcd34d';
-  return '#86efac';
-}
-function windowLabel(o) {
-  const oh = o.winOpen/60, ch = o.winClose/60;
-  return `${oh}–${ch}am`;
-}
-
-const DIST_POINTS = [
-  DEPOT,
-  ...Object.entries(STORE_COORDS).map(([id, c]) => ({ id, ...c }))
-];
-
-const TRUCK_COLORS = [
-  '#3b7ef8','#0fba80','#f0a623','#f04c5a','#8b5cf6',
-  '#06c0d4','#f97316','#ec4899','#84cc16','#6366f1'
-];
-
+const TRUCK_COLORS = ['#3b7ef8','#0fba80','#f0a623','#f04c5a','#8b5cf6','#06c0d4','#f97316','#ec4899','#84cc16','#6366f1'];
 const CAP = { cases:2500, cube:2800, weight:43500 };
 const SYSTEM_TRUCKS = 7;
+const DIST_POINTS = [DEPOT,...Object.entries(STORE_COORDS).map(([id,c])=>({id,...c}))];
 
-// ═══════════════════════════════════════════════════════════════
-// 2. ORDER DATA
-// ═══════════════════════════════════════════════════════════════
 const ORDERS = [
-  { id:'HJ358210', store:'0010', storeName:'Santa Rosa', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:10, cube:16.86, weight:152.3 },
-  { id:'39935032', store:'0010', storeName:'Santa Rosa', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:288, cube:264.17, weight:10626 },
-  { id:'39934982', store:'0010', storeName:'Santa Rosa', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:125, cube:139.98, weight:3987.2 },
-  { id:'39935828', store:'0011', storeName:'Pleasant Hill', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:1172, cube:749.00, weight:15776.63 },
-  { id:'39935691', store:'0011', storeName:'Pleasant Hill', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:306, cube:267.52, weight:5156.67 },
-  { id:'39936164', store:'0065', storeName:'San Pablo', window:'4:00-8:00', winOpen:4*60, winClose:8*60, priority:9, restricted:'', cases:1120, cube:748.43, weight:20496.3 },
-  { id:'39935686', store:'0065', storeName:'San Pablo', window:'4:00-8:00', winOpen:4*60, winClose:8*60, priority:9, restricted:'', cases:54, cube:62.99, weight:674.96 },
-  { id:'39935553', store:'0166', storeName:'Novato', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:1143, cube:767.51, weight:17750.74 },
-  { id:'39935450', store:'0166', storeName:'Novato', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:177, cube:183.09, weight:3291.88 },
-  { id:'39935529', store:'0181', storeName:'Concord', window:'4:00-8:00', winOpen:4*60, winClose:8*60, priority:9, restricted:'', cases:1178, cube:909.35, weight:19976.48 },
-  { id:'39935461', store:'0181', storeName:'Concord', window:'4:00-8:00', winOpen:4*60, winClose:8*60, priority:9, restricted:'', cases:145, cube:94.35, weight:1304.51 },
-  { id:'39936045', store:'0242', storeName:'Richmond', window:'4:00-8:00', winOpen:4*60, winClose:8*60, priority:9, restricted:"48'", cases:1281, cube:806.06, weight:19518.16 },
-  { id:'39935605', store:'0242', storeName:'Richmond', window:'4:00-8:00', winOpen:4*60, winClose:8*60, priority:9, restricted:"48'", cases:172, cube:109.34, weight:1632.86 },
-  { id:'39936324', store:'0268', storeName:'Buchanan', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:871, cube:538.26, weight:13269.22 },
-  { id:'39935814', store:'0268', storeName:'Buchanan', window:'7:00-11:00', winOpen:7*60, winClose:11*60, priority:0, restricted:'', cases:85, cube:137.35, weight:2028.23 },
-  { id:'39936320', store:'0269', storeName:'Oakley', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:1146, cube:716.11, weight:23697.25 },
-  { id:'39935597', store:'0269', storeName:'Oakley', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:158, cube:148.35, weight:1711.42 },
-  { id:'39936375', store:'0283', storeName:'W Vallejo', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:2047, cube:1863.60, weight:38375.94 },
-  { id:'39936302', store:'0283', storeName:'W Vallejo', window:'6:00-10:00', winOpen:6*60, winClose:11*60, priority:0, restricted:'', cases:317, cube:318.89, weight:6376.39 },
-  { id:'39936292', store:'0440', storeName:'Brentwood', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:1119, cube:1234.46, weight:20718.74 },
-  { id:'39936258', store:'0440', storeName:'Brentwood', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:59, cube:61.52, weight:743.88 },
-  { id:'39936315', store:'0459', storeName:'San Rafael', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:970, cube:682.22, weight:18532.86 },
-  { id:'39936201', store:'0459', storeName:'San Rafael', window:'6:00-10:00', winOpen:6*60, winClose:10*60, priority:0, restricted:'', cases:93, cube:98.93, weight:1179.93 },
-  { id:'39936198', store:'0462', storeName:'Windsor', window:'5:00-9:00', winOpen:5*60, winClose:9*60, priority:0, restricted:'', cases:1972, cube:1252.38, weight:30501.53 },
-  { id:'39935468', store:'0462', storeName:'Windsor', window:'5:00-9:00', winOpen:5*60, winClose:9*60, priority:0, restricted:'', cases:46, cube:57.07, weight:771.4 },
+  {id:'HJ358210',store:'0010',storeName:'Santa Rosa',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:10,cube:16.86,weight:152.3},
+  {id:'39935032',store:'0010',storeName:'Santa Rosa',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:288,cube:264.17,weight:10626},
+  {id:'39934982',store:'0010',storeName:'Santa Rosa',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:125,cube:139.98,weight:3987.2},
+  {id:'39935828',store:'0011',storeName:'Pleasant Hill',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:1172,cube:749.00,weight:15776.63},
+  {id:'39935691',store:'0011',storeName:'Pleasant Hill',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:306,cube:267.52,weight:5156.67},
+  {id:'39936164',store:'0065',storeName:'San Pablo',window:'4:00-8:00',winOpen:4*60,winClose:8*60,priority:9,restricted:'',cases:1120,cube:748.43,weight:20496.3},
+  {id:'39935686',store:'0065',storeName:'San Pablo',window:'4:00-8:00',winOpen:4*60,winClose:8*60,priority:9,restricted:'',cases:54,cube:62.99,weight:674.96},
+  {id:'39935553',store:'0166',storeName:'Novato',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:1143,cube:767.51,weight:17750.74},
+  {id:'39935450',store:'0166',storeName:'Novato',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:177,cube:183.09,weight:3291.88},
+  {id:'39935529',store:'0181',storeName:'Concord',window:'4:00-8:00',winOpen:4*60,winClose:8*60,priority:9,restricted:'',cases:1178,cube:909.35,weight:19976.48},
+  {id:'39935461',store:'0181',storeName:'Concord',window:'4:00-8:00',winOpen:4*60,winClose:8*60,priority:9,restricted:'',cases:145,cube:94.35,weight:1304.51},
+  {id:'39936045',store:'0242',storeName:'Richmond',window:'4:00-8:00',winOpen:4*60,winClose:8*60,priority:9,restricted:"48'",cases:1281,cube:806.06,weight:19518.16},
+  {id:'39935605',store:'0242',storeName:'Richmond',window:'4:00-8:00',winOpen:4*60,winClose:8*60,priority:9,restricted:"48'",cases:172,cube:109.34,weight:1632.86},
+  {id:'39936324',store:'0268',storeName:'Buchanan',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:871,cube:538.26,weight:13269.22},
+  {id:'39935814',store:'0268',storeName:'Buchanan',window:'7:00-11:00',winOpen:7*60,winClose:11*60,priority:0,restricted:'',cases:85,cube:137.35,weight:2028.23},
+  {id:'39936320',store:'0269',storeName:'Oakley',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:1146,cube:716.11,weight:23697.25},
+  {id:'39935597',store:'0269',storeName:'Oakley',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:158,cube:148.35,weight:1711.42},
+  {id:'39936375',store:'0283',storeName:'W Vallejo',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:2047,cube:1863.60,weight:38375.94},
+  {id:'39936302',store:'0283',storeName:'W Vallejo',window:'6:00-10:00',winOpen:6*60,winClose:11*60,priority:0,restricted:'',cases:317,cube:318.89,weight:6376.39},
+  {id:'39936292',store:'0440',storeName:'Brentwood',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:1119,cube:1234.46,weight:20718.74},
+  {id:'39936258',store:'0440',storeName:'Brentwood',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:59,cube:61.52,weight:743.88},
+  {id:'39936315',store:'0459',storeName:'San Rafael',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:970,cube:682.22,weight:18532.86},
+  {id:'39936201',store:'0459',storeName:'San Rafael',window:'6:00-10:00',winOpen:6*60,winClose:10*60,priority:0,restricted:'',cases:93,cube:98.93,weight:1179.93},
+  {id:'39936198',store:'0462',storeName:'Windsor',window:'5:00-9:00',winOpen:5*60,winClose:9*60,priority:0,restricted:'',cases:1972,cube:1252.38,weight:30501.53},
+  {id:'39935468',store:'0462',storeName:'Windsor',window:'5:00-9:00',winOpen:5*60,winClose:9*60,priority:0,restricted:'',cases:46,cube:57.07,weight:771.4},
 ];
 
 const SYS_ROUTES = [
-  { num:2,  start:'3:30', stops:[{store:'Brentwood'},{store:'Buchanan'}],      cases:2134, orders:['39936292','39936258','39936324','39935814'] },
-  { num:3,  start:'1:30', stops:[{store:'San Pablo'},{store:'Novato'}],        cases:2317, orders:['39936164','39935686','39935553','39935450'] },
-  { num:6,  start:'2:00', stops:[{store:'Windsor'},{store:'W Vallejo'}],        cases:2335, orders:['39936198','39935468','39936302'] },
-  { num:7,  start:'1:30', stops:[{store:'Richmond'},{store:'San Rafael'}],     cases:2516, orders:['39936045','39935605','39936315','39936201'] },
-  { num:14, start:'3:30', stops:[{store:'Santa Rosa'},{store:'Oakley'}],       cases:1727, orders:['HJ358210','39935032','39934982','39936320','39935597'] },
-  { num:19, start:'2:00', stops:[{store:'Concord'},{store:'Pleasant Hill'}],   cases:2801, orders:['39935529','39935461','39935828','39935691'] },
-  { num:21, start:'4:30', stops:[{store:'W Vallejo'}],                         cases:2047, orders:['39936375'] },
+  {num:2,start:'3:30',stops:[{store:'Brentwood'},{store:'Buchanan'}],cases:2134,orders:['39936292','39936258','39936324','39935814']},
+  {num:3,start:'1:30',stops:[{store:'San Pablo'},{store:'Novato'}],cases:2317,orders:['39936164','39935686','39935553','39935450']},
+  {num:6,start:'2:00',stops:[{store:'Windsor'},{store:'W Vallejo'}],cases:2335,orders:['39936198','39935468','39936302']},
+  {num:7,start:'1:30',stops:[{store:'Richmond'},{store:'San Rafael'}],cases:2516,orders:['39936045','39935605','39936315','39936201']},
+  {num:14,start:'3:30',stops:[{store:'Santa Rosa'},{store:'Oakley'}],cases:1727,orders:['HJ358210','39935032','39934982','39936320','39935597']},
+  {num:19,start:'2:00',stops:[{store:'Concord'},{store:'Pleasant Hill'}],cases:2801,orders:['39935529','39935461','39935828','39935691']},
+  {num:21,start:'4:30',stops:[{store:'W Vallejo'}],cases:2047,orders:['39936375']},
 ];
 
 const STOP_NAME_TO_ID = {
@@ -1476,1922 +1381,572 @@ const STOP_NAME_TO_ID = {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// 3. STATE
+// STATE
 // ═══════════════════════════════════════════════════════════════
-let map = null, resultsMap = null;
-let storeMarkers = {}, routeLayers = {};
-let distMatrix = null, distMatrixReady = false, usingEstimated = false;
-let optimalMiles = null;
-let trucks = [], poolOrders = [];
-let poolSearch = '', poolSort = 'name-asc', poolFilters = new Set();
-let truckCounter = 0, draggedOrder = null, dragSource = null;
-let timerInterval = null, startTime = null, elapsedSeconds = 0;
-let leaderboard = (() => { try { return JSON.parse(sessionStorage.getItem('routing_lb') || '[]'); } catch(e) { return []; } })();
-let fromScreen = 'intro', playerName = '';
-const routeTimers = {};
+let map=null,resultsMapUser=null,resultsMapSystem=null;
+let storeMarkers={},routeLayers={};
+let distMatrix=null,distMatrixReady=false,usingEstimated=false;
+let optimalMiles=null;
+let trucks=[],poolOrders=[];
+let poolSearch='',poolSort='name-asc',poolFilters=new Set();
+let truckCounter=0,draggedOrder=null,dragSource=null;
+let timerInterval=null,startTime=null,elapsedSeconds=0;
+let playerName='';
+const routeTimers={};
 
 // ═══════════════════════════════════════════════════════════════
-// 4. MAP FUNCTIONS
+// WINDOW FEASIBILITY
 // ═══════════════════════════════════════════════════════════════
-function makeStoreIcon(abbr, color) {
-  return L.divIcon({
-    html: `<div style="background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;color:rgba(255,255,255,0.95);border:2px solid rgba(255,255,255,0.2);font-family:'Manrope',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${abbr}</div>`,
-    iconSize:[28,28], iconAnchor:[14,14], className:''
-  });
-}
-
-function initMap() {
-  if (map) {
-    Object.values(routeLayers).forEach(l => { if (l) map.removeLayer(l); });
-    routeLayers = {};
-    Object.values(storeMarkers).forEach(m => m.setIcon(makeStoreIcon(STORE_ABBR[m._storeId], '#3a4a5c')));
-    return;
-  }
-
-  map = L.map('game-map', { center:[38.05,-122.2], zoom: window.innerHeight <= 500 ? 7 : 9, zoomControl:false });
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-    attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
-    subdomains:'abcd', maxZoom:19
-  }).addTo(map);
-
-  L.marker([DEPOT.lat, DEPOT.lng], {
-    icon: L.divIcon({
-      html:`<div style="background:#1e293b;width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.18);box-shadow:0 2px 10px rgba(0,0,0,0.5)">🏭</div>`,
-      iconSize:[32,32], iconAnchor:[16,16], className:''
-    }),
-    zIndexOffset: 1000
-  }).addTo(map).bindTooltip('DC · Sacramento, CA', { permanent:true, direction:'bottom', offset:[0,14], className:'store-tt' });
-
-  Object.entries(STORE_COORDS).forEach(([id, coords]) => {
-    const icon = makeStoreIcon(STORE_ABBR[id], '#3a4a5c');
-    const marker = L.marker([coords.lat, coords.lng], { icon }).addTo(map);
-    marker.bindTooltip(STORE_NAMES[id], { permanent:true, direction:'top', offset:[0,-16], className:'store-tt' });
-    marker._storeId = id;
-    storeMarkers[id] = marker;
-  });
-}
-
-function updateMarkerColors() {
-  const colors = {};
-  trucks.forEach((t, i) => {
-    getUniqueStores(t.orders).forEach(id => { colors[id] = TRUCK_COLORS[i % TRUCK_COLORS.length]; });
-  });
-  Object.entries(storeMarkers).forEach(([id, m]) => {
-    m.setIcon(makeStoreIcon(STORE_ABBR[id], colors[id] || '#3a4a5c'));
-  });
-  const leg = document.getElementById('map-legend');
-  const activeTrucks = trucks.filter(t => t.orders.length > 0);
-  if (!activeTrucks.length) {
-    leg.innerHTML = '<div class="legend-title">Trucks</div><div class="legend-row"><div class="legend-dash" style="background:#4b5563"></div><span style="color:var(--text3)">No trucks yet</span></div>';
-    return;
-  }
-  let html = '<div class="legend-title">Trucks</div>';
-  activeTrucks.forEach((t, i) => {
-    const c = TRUCK_COLORS[i % TRUCK_COLORS.length];
-    const stores = getUniqueStores(t.orders).map(id => STORE_ABBR[id]).join(' ');
-    html += `<div class="legend-row"><div class="legend-dash" style="background:${c}"></div><span>${t.name} <span style="color:var(--text3);font-size:12px">${stores}</span></span></div>`;
-  });
-  leg.innerHTML = html;
-}
-
-function scheduleRouteUpdate(truckId) {
-  if (routeTimers[truckId]) clearTimeout(routeTimers[truckId]);
-  routeTimers[truckId] = setTimeout(() => drawTruckRoute(truckId), 600);
-}
-
-async function drawTruckRoute(truckId) {
-  if (!map) return;
-  const truck = trucks.find(t => t.id === truckId);
-  if (!truck) return;
-  clearTruckRouteLayers(truckId);
-  if (!truck.orders.length) return;
-  const idx = trucks.indexOf(truck);
-  const color = TRUCK_COLORS[idx % TRUCK_COLORS.length];
-  const stores = optimizeStopOrder(getUniqueStores(truck.orders));
-  const storeAbbrevs = stores.map(function(id){ return STORE_ABBR[id]; }).join('→');
-  const labelText = 'T' + truck.id + '·' + storeAbbrevs;
-  const latLngs = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-  routeLayers[truckId] = L.polyline(latLngs, { color, weight:3, opacity:0.85, lineJoin:'round', lineCap:'round' }).addTo(map);
-  placeTruckLabel(truckId, labelText, latLngs, color, 0.38);
-}
-
-function placeTruckLabel(truckId, labelText, labelPts, color, pct) {
-  const labelKey = truckId + '_label';
-  if (routeLayers[labelKey]) { map.removeLayer(routeLayers[labelKey]); delete routeLayers[labelKey]; }
-  if (!labelPts || !labelPts.length) return;
-  const labelPos = routeLabelPoint(labelPts, pct !== undefined ? pct : 0.5);
-  const [midLat,midLng] = labelPos;
-  const labelIcon = L.divIcon({
-    html: '<div style="background:' + color + ';color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.7);border:1.5px solid rgba(255,255,255,0.25);pointer-events:none">' + labelText + '</div>',
-    className: 'truck-route-label',
-    iconSize: [0, 0],
-    iconAnchor: [0, 10]
-  });
-  routeLayers[labelKey] = L.marker([midLat, midLng], { icon: labelIcon, interactive: false, zIndexOffset: 500 }).addTo(map);
-}
-
-function routeLabelPoint(pts, pct) {
-  if (!pts || pts.length <= 1) return pts ? pts[0] : [38.05, -122.2];
-  var p = (pct !== undefined) ? pct : 0.38;
-  var total = 0, segs = [];
-  for (var i = 0; i < pts.length - 1; i++) {
-    var d = Math.abs(pts[i+1][0]-pts[i][0]) + Math.abs(pts[i+1][1]-pts[i][1]);
-    segs.push(d); total += d;
-  }
-  if (total === 0) return pts[0];
-  var target = total * p, acc = 0;
-  for (var i = 0; i < segs.length; i++) {
-    if (acc + segs[i] >= target) {
-      var t = segs[i] > 0 ? (target - acc) / segs[i] : 0;
-      return [pts[i][0] + t*(pts[i+1][0]-pts[i][0]), pts[i][1] + t*(pts[i+1][1]-pts[i][1])];
+function haversineKm(la1,lo1,la2,lo2){const R=6371,r=Math.PI/180,dLa=(la2-la1)*r,dLo=(lo2-lo1)*r,a=Math.sin(dLa/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dLo/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function roadKm(a,b){return haversineKm(a.lat,a.lng,b.lat,b.lng)*1.3;}
+function checkWindowFeasibility(truckOrders){
+  const SPEED=80,SVC=45,ids=[...new Set(truckOrders.map(o=>o.store))];
+  if(ids.length<=1)return{ok:true,violations:[],waitMins:0};
+  const stores=ids.map(id=>{const o=truckOrders.find(o=>o.store===id);return{id,name:o.storeName,winOpen:o.winOpen,winClose:o.winClose,coords:STORE_COORDS[id]};});
+  const perms=arr=>arr.length<=1?[arr]:arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)]).map(p=>[v,...p]));
+  let best=null;
+  for(const ord of perms(stores)){
+    const viols=[];let t=ord[0].winOpen,cur=ord[0].coords;t+=SVC;
+    let ok=true;
+    for(let i=1;i<ord.length;i++){
+      const s=ord[i],arr=t+(roadKm(cur,s.coords)/SPEED)*60;
+      if(arr>s.winClose){ok=false;const h=Math.floor(arr/60),m=Math.round(arr%60);viols.push({store:s.name,msg:`Arrives ~${h}:${String(m).padStart(2,'0')} but closes ${s.winClose/60}:00`});}
+      t=Math.max(arr,s.winOpen)+SVC;cur=s.coords;
     }
-    acc += segs[i];
+    if(ok&&(!best||0<best.waitMins))best={ok:true,violations:[],waitMins:0};
+    else if(!ok&&!best)best={ok:false,violations:viols,waitMins:0};
   }
-  return pts[Math.min(Math.floor(pts.length * p), pts.length - 1)];
+  return best||{ok:true,violations:[],waitMins:0};
 }
+function windowBadgeColor(w){return w<=4*60?'#fca5a5':w<=6*60?'#fcd34d':'#86efac';}
+function windowLabel(o){return `${o.winOpen/60}–${o.winClose/60}am`;}
 
-function addResultsLegend(map, entries, title) {
-  var ctrl = L.control({position: 'bottomright'});
-  ctrl.onAdd = function() {
-    var div = L.DomUtil.create('div', 'results-legend-ctrl');
-    var html = '<div class="rl-title">' + title + '</div>';
-    entries.forEach(function(e) {
-      html += '<div class="rl-row"><div class="rl-swatch" style="background:' + e.color + '"></div><span class="rl-label">' + e.label + '</span></div>';
-    });
-    div.innerHTML = html;
-    return div;
-  };
-  ctrl.addTo(map);
+// ═══════════════════════════════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════════════════════════════
+function makeStoreIcon(abbr,color){return L.divIcon({html:`<div style="background:${color};width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-weight:800;color:rgba(255,255,255,0.95);border:2px solid rgba(255,255,255,0.2);font-family:'Manrope',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.5)">${abbr}</div>`,iconSize:[28,28],iconAnchor:[14,14],className:''});}
+function initMap(){
+  if(map){Object.values(routeLayers).forEach(l=>{if(l)map.removeLayer(l)});routeLayers={};Object.values(storeMarkers).forEach(m=>m.setIcon(makeStoreIcon(STORE_ABBR[m._storeId],'#3a4a5c')));return;}
+  map=L.map('game-map',{center:[38.05,-122.2],zoom:window.innerHeight<=500?7:9,zoomControl:false});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{attribution:'© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',subdomains:'abcd',maxZoom:19}).addTo(map);
+  L.marker([DEPOT.lat,DEPOT.lng],{icon:L.divIcon({html:`<div style="background:#1e293b;width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid rgba(255,255,255,0.18);box-shadow:0 2px 10px rgba(0,0,0,0.5)">🏭</div>`,iconSize:[32,32],iconAnchor:[16,16],className:''}),zIndexOffset:1000}).addTo(map).bindTooltip('DC · Sacramento, CA',{permanent:true,direction:'bottom',offset:[0,14],className:'store-tt'});
+  Object.entries(STORE_COORDS).forEach(([id,c])=>{const m=L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],'#3a4a5c')}).addTo(map);m.bindTooltip(STORE_NAMES[id],{permanent:true,direction:'top',offset:[0,-16],className:'store-tt'});m._storeId=id;storeMarkers[id]=m;});
 }
+function updateMarkerColors(){
+  const colors={};trucks.forEach((t,i)=>getUniqueStores(t.orders).forEach(id=>{colors[id]=TRUCK_COLORS[i%TRUCK_COLORS.length];}));
+  Object.entries(storeMarkers).forEach(([id,m])=>m.setIcon(makeStoreIcon(STORE_ABBR[id],colors[id]||'#3a4a5c')));
+  const leg=document.getElementById('map-legend');
+  const active=trucks.filter(t=>t.orders.length>0);
+  if(!active.length){leg.innerHTML='<div class="legend-title">Trucks</div><div class="legend-row"><div class="legend-dash" style="background:#4b5563"></div><span style="color:var(--text3)">No trucks yet</span></div>';return;}
+  let h='<div class="legend-title">Trucks</div>';
+  active.forEach((t,i)=>{const c=TRUCK_COLORS[i%TRUCK_COLORS.length],s=getUniqueStores(t.orders).map(id=>STORE_ABBR[id]).join(' ');h+=`<div class="legend-row"><div class="legend-dash" style="background:${c}"></div><span>${t.name} <span style="color:var(--text3);font-size:12px">${s}</span></span></div>`;});
+  leg.innerHTML=h;
+}
+function scheduleRouteUpdate(tid){if(routeTimers[tid])clearTimeout(routeTimers[tid]);routeTimers[tid]=setTimeout(()=>drawTruckRoute(tid),600);}
+function drawTruckRoute(tid){
+  if(!map)return;const truck=trucks.find(t=>t.id===tid);if(!truck)return;clearTruckRouteLayers(tid);if(!truck.orders.length)return;
+  const idx=trucks.indexOf(truck),color=TRUCK_COLORS[idx%TRUCK_COLORS.length];
+  const stores=optimizeStopOrder(getUniqueStores(truck.orders));
+  const lls=[[DEPOT.lat,DEPOT.lng],...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
+  routeLayers[tid]=L.polyline(lls,{color,weight:3,opacity:0.85,lineJoin:'round',lineCap:'round'}).addTo(map);
+  const label='T'+truck.id+'·'+stores.map(id=>STORE_ABBR[id]).join('→');
+  placeTruckLabel(tid,label,lls,color,0.38);
+}
+function placeTruckLabel(tid,txt,pts,color,pct){
+  const lk=tid+'_label';if(routeLayers[lk]){map.removeLayer(routeLayers[lk]);delete routeLayers[lk];}
+  if(!pts||!pts.length)return;
+  const pos=routeLabelPoint(pts,pct||0.5);
+  const icon=L.divIcon({html:`<div style="background:${color};color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 10px rgba(0,0,0,.7);border:1.5px solid rgba(255,255,255,0.25);pointer-events:none">${txt}</div>`,className:'truck-route-label',iconSize:[0,0],iconAnchor:[0,10]});
+  routeLayers[lk]=L.marker(pos,{icon,interactive:false,zIndexOffset:500}).addTo(map);
+}
+function routeLabelPoint(pts,p){
+  if(!pts||pts.length<=1)return pts?pts[0]:[38.05,-122.2];
+  let total=0,segs=[];
+  for(let i=0;i<pts.length-1;i++){const d=Math.abs(pts[i+1][0]-pts[i][0])+Math.abs(pts[i+1][1]-pts[i][1]);segs.push(d);total+=d;}
+  if(!total)return pts[0];
+  let target=total*p,acc=0;
+  for(let i=0;i<segs.length;i++){if(acc+segs[i]>=target){const t=segs[i]?(target-acc)/segs[i]:0;return[pts[i][0]+t*(pts[i+1][0]-pts[i][0]),pts[i][1]+t*(pts[i+1][1]-pts[i][1])];}acc+=segs[i];}
+  return pts[Math.min(Math.floor(pts.length*p),pts.length-1)];
+}
+function clearAllRoutes(){Object.values(routeLayers).forEach(l=>{if(l&&map)map.removeLayer(l)});routeLayers={};}
+function clearTruckRouteLayers(tid){if(routeLayers[tid]){map.removeLayer(routeLayers[tid]);delete routeLayers[tid];}const lk=tid+'_label';if(routeLayers[lk]){map.removeLayer(routeLayers[lk]);delete routeLayers[lk];}}
 
-function fetchRouteGeo(latLngs) {
-  return Promise.resolve(null);
-}
-
-function clearAllRoutes() {
-  Object.values(routeLayers).forEach(l => { if (l && map) map.removeLayer(l); });
-  routeLayers = {};
-}
-function clearTruckRouteLayers(truckId) {
-  if (routeLayers[truckId]) { map.removeLayer(routeLayers[truckId]); delete routeLayers[truckId]; }
-  const lk = truckId + '_label';
-  if (routeLayers[lk]) { map.removeLayer(routeLayers[lk]); delete routeLayers[lk]; }
+// ═══════════════════════════════════════════════════════════════
+// DISTANCE
+// ═══════════════════════════════════════════════════════════════
+function haversine(la1,lo1,la2,lo2){const R=3958.8,d1=(la2-la1)*Math.PI/180,d2=(lo2-lo1)*Math.PI/180,a=Math.sin(d1/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(d2/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+function buildHaversineMatrix(){const m={};DIST_POINTS.forEach(p1=>{m[p1.id]={};DIST_POINTS.forEach(p2=>{m[p1.id][p2.id]=haversine(p1.lat,p1.lng,p2.lat,p2.lng)*1.28;});});return m;}
+async function loadDistMatrix(){distMatrix=buildHaversineMatrix();usingEstimated=false;distMatrixReady=true;optimalMiles=calcOptimalMiles();const e=document.getElementById('mo-opt');if(e)e.textContent=optimalMiles?optimalMiles.toLocaleString()+' mi':'—';updateMilesOverlay();trucks.forEach(t=>{if(t.orders.length)scheduleRouteUpdate(t.id);});}
+function getDistBetween(a,b){if(distMatrix&&distMatrix[a]&&distMatrix[a][b]!==undefined)return distMatrix[a][b];const p1=a==='depot'?DEPOT:STORE_COORDS[a],p2=b==='depot'?DEPOT:STORE_COORDS[b];return p1&&p2?haversine(p1.lat,p1.lng,p2.lat,p2.lng)*1.28:0;}
+function optimizeStopOrder(ids){if(ids.length<=1)return ids;const rem=[...ids],ord=[];let cur='depot';while(rem.length){let best=null,bestD=Infinity;rem.forEach(id=>{const d=getDistBetween(cur,id);if(d<bestD){bestD=d;best=id;}});ord.push(best);rem.splice(rem.indexOf(best),1);cur=best;}return ord;}
+function getTruckMiles(t){if(!t.orders.length)return 0;const s=optimizeStopOrder(getUniqueStores(t.orders));let m=getDistBetween('depot',s[0]);for(let i=0;i<s.length-1;i++)m+=getDistBetween(s[i],s[i+1]);return Math.round(m);}
+function getTotalMiles(){return trucks.reduce((s,t)=>s+getTruckMiles(t),0);}
+function calcOptimalMiles(){if(!distMatrix)return null;let total=0;SYS_ROUTES.forEach(r=>{const s=r.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean),o=optimizeStopOrder(s);if(!o.length)return;let m=getDistBetween('depot',o[0]);for(let i=0;i<o.length-1;i++)m+=getDistBetween(o[i],o[i+1]);total+=m;});return Math.round(total);}
+function updateMilesOverlay(){
+  const total=getTotalMiles();
+  ['mob-opt','mo-opt'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=optimalMiles?optimalMiles.toLocaleString()+' mi':'—';});
+  ['mob-yours','mo-yours'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=total>0?total.toLocaleString()+' mi':'—';});
+  const sm=document.getElementById('stat-miles');if(sm)sm.textContent=total>0?total.toLocaleString()+' mi':'— mi';
+  const ef=document.getElementById('eff-fill');if(ef&&optimalMiles&&total>0){const pct=Math.min(100,Math.round(optimalMiles/total*100));ef.style.width=pct+'%';ef.style.background=pct>=90?'var(--green)':pct>=75?'var(--amber)':'var(--red)';}else if(ef){ef.style.width='0%';}
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 5. DISTANCE FUNCTIONS
+// GAME LOGIC
 // ═══════════════════════════════════════════════════════════════
-function haversine(lat1, lng1, lat2, lng2) {
-  const R = 3958.8;
-  const dLat = (lat2-lat1)*Math.PI/180;
-  const dLng = (lng2-lng1)*Math.PI/180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function buildHaversineMatrix() {
-  const mat = {};
-  DIST_POINTS.forEach(p1 => {
-    mat[p1.id] = {};
-    DIST_POINTS.forEach(p2 => {
-      mat[p1.id][p2.id] = haversine(p1.lat, p1.lng, p2.lat, p2.lng) * 1.28;
-    });
-  });
-  return mat;
-}
-
-async function loadDistMatrix() {
-  distMatrix = buildHaversineMatrix();
-  usingEstimated = false;
-  distMatrixReady = true;
-  optimalMiles = calcOptimalMiles();
-  const optEl = document.getElementById('mo-opt');
-  if (optEl) optEl.textContent = optimalMiles ? optimalMiles.toLocaleString() + ' mi' : '—';
-  updateMilesOverlay();
-  trucks.forEach(t => { if (t.orders.length) scheduleRouteUpdate(t.id); });
-}
-
-function getDistBetween(id1, id2) {
-  if (distMatrix && distMatrix[id1] && distMatrix[id1][id2] !== undefined) {
-    return distMatrix[id1][id2];
-  }
-  const p1 = id1 === 'depot' ? DEPOT : STORE_COORDS[id1];
-  const p2 = id2 === 'depot' ? DEPOT : STORE_COORDS[id2];
-  return p1 && p2 ? haversine(p1.lat,p1.lng,p2.lat,p2.lng)*1.28 : 0;
-}
-
-function optimizeStopOrder(storeIds) {
-  if (storeIds.length <= 1) return storeIds;
-  const rem = [...storeIds];
-  const ordered = [];
-  let cur = 'depot';
-  while (rem.length) {
-    let best = null, bestD = Infinity;
-    rem.forEach(id => { const d = getDistBetween(cur, id); if (d < bestD) { bestD=d; best=id; } });
-    ordered.push(best);
-    rem.splice(rem.indexOf(best), 1);
-    cur = best;
-  }
-  return ordered;
-}
-
-function getTruckMiles(truck) {
-  if (!truck.orders.length) return 0;
-  const stores = optimizeStopOrder(getUniqueStores(truck.orders));
-  let miles = getDistBetween('depot', stores[0]);
-  for (let i = 0; i < stores.length-1; i++) miles += getDistBetween(stores[i], stores[i+1]);
-  return Math.round(miles);
-}
-
-function getTotalMiles() {
-  return trucks.reduce((s, t) => s + getTruckMiles(t), 0);
-}
-
-function calcOptimalMiles() {
-  if (!distMatrix) return null;
-  let total = 0;
-  SYS_ROUTES.forEach(route => {
-    const stores = route.stops.map(s => STOP_NAME_TO_ID[s.store]).filter(Boolean);
-    if (!stores.length) return;
-    const ordered = optimizeStopOrder(stores);
-    let miles = getDistBetween('depot', ordered[0]);
-    for (let i = 0; i < ordered.length-1; i++) miles += getDistBetween(ordered[i], ordered[i+1]);
-    total += miles;
-  });
-  return Math.round(total);
-}
-
-function updateMilesOverlay() {
-  const total = getTotalMiles();
-  const mobOpt   = document.getElementById('mob-opt');
-  const mobYours = document.getElementById('mob-yours');
-  if (mobOpt)   mobOpt.textContent   = optimalMiles ? optimalMiles.toLocaleString()+' mi' : '—';
-  if (mobYours) mobYours.textContent = total > 0 ? total.toLocaleString()+' mi' : '—';
-  const yoursEl = document.getElementById('mo-yours');
-  const optEl = document.getElementById('mo-opt');
-  const effFill = document.getElementById('eff-fill');
-  const statMilesEl = document.getElementById('stat-miles');
-  if (yoursEl) yoursEl.textContent = total > 0 ? total.toLocaleString()+' mi' : '—';
-  if (statMilesEl) {
-    statMilesEl.textContent = total > 0 ? total.toLocaleString()+' mi' : '— mi';
-    statMilesEl.className = 'gh-val';
-  }
-  if (optimalMiles && total > 0 && effFill) {
-    const eff = Math.min(100, Math.round((optimalMiles / total) * 100));
-    effFill.style.width = eff + '%';
-    effFill.style.background = eff >= 90 ? 'var(--green)' : eff >= 75 ? 'var(--amber)' : 'var(--red)';
-  } else if (effFill) {
-    effFill.style.width = '0%';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// 6. GAME LOGIC
-// ═══════════════════════════════════════════════════════════════
-function startGame() {
-  playerName = document.getElementById('player-name-input').value.trim() || 'Anonymous';
-  document.getElementById('gh-player').textContent = '👤 ' + playerName;
-  resetGame();
-  showScreen('screen-game');
-  startTimer();
-  setTimeout(() => {
-    initMap();
-    loadDistMatrix();
-  }, 80);
-}
-
-function resetGame() {
-  trucks = [];
-  poolOrders = [...ORDERS];
-  truckCounter = 0;
-  draggedOrder = null; dragSource = null;
-  clearAllRoutes();
-  addTruck(); addTruck();
-  renderAll();
-  updateMilesOverlay();
-}
-
-function addTruck() {
-  truckCounter++;
-  trucks.push({ id:truckCounter, name:'Truck '+truckCounter, orders:[] });
-  renderAll();
-}
-
-function removeTruck(id) {
-  const t = trucks.find(t => t.id === id);
-  if (t) { poolOrders.push(...t.orders); trucks = trucks.filter(t => t.id !== id); }
-  if (routeLayers[id]) { if (map) map.removeLayer(routeLayers[id]); delete routeLayers[id]; }
-  renderAll();
-  updateMarkerColors();
-  updateMilesOverlay();
-}
-
-async function submitRoutes() {
-  if (poolOrders.length > 0) {
-    if (!confirm(`${poolOrders.length} unassigned order(s). Submit anyway? You'll lose points.`)) return;
-  }
-  if (trucks.filter(t=>t.orders.length).length === 0) { showToast('Add at least one truck with orders!'); return; }
+function startGame(){playerName=document.getElementById('player-name-input').value.trim()||'Anonymous';document.getElementById('gh-player').textContent='👤 '+playerName;resetGame();showScreen('screen-game');setGameActive(true);startTimer();setTimeout(()=>{initMap();loadDistMatrix();},80);}
+function resetGame(){trucks=[];poolOrders=[...ORDERS];truckCounter=0;draggedOrder=null;dragSource=null;clearAllRoutes();addTruck();addTruck();renderAll();updateMilesOverlay();}
+function addTruck(){truckCounter++;trucks.push({id:truckCounter,name:'Truck '+truckCounter,orders:[]});renderAll();}
+function removeTruck(id){const t=trucks.find(t=>t.id===id);if(t){poolOrders.push(...t.orders);trucks=trucks.filter(t=>t.id!==id);}if(routeLayers[id]){if(map)map.removeLayer(routeLayers[id]);delete routeLayers[id];}renderAll();updateMarkerColors();updateMilesOverlay();}
+async function submitRoutes(){
+  if(poolOrders.length>0&&!confirm(`${poolOrders.length} unassigned order(s). Submit anyway?`))return;
+  if(!trucks.filter(t=>t.orders.length).length){showToast('Add at least one truck with orders!');return;}
   stopTimer();
-
-  document.getElementById('submit-btn').textContent = '⏳ Scoring…';
-  document.getElementById('submit-btn').disabled = true;
-
-  const finalGeos = {};
-  const sysGeoMap = {};
-
-  const userActive = trucks.filter(t=>t.orders.length>0);
-  userActive.forEach(function(truck, i) {
-    const stores = optimizeStopOrder(getUniqueStores(truck.orders));
-    const lls = [[DEPOT.lat,DEPOT.lng], ...stores.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-    finalGeos[truck.id] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length], name:truck.name };
-  });
-
-  SYS_ROUTES.forEach(function(sr, i) {
-    const storeIds = sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean);
-    const ordered = optimizeStopOrder(storeIds);
-    const lls = [[DEPOT.lat,DEPOT.lng], ...ordered.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];
-    sysGeoMap[sr.num] = { geo:null, lls, color:TRUCK_COLORS[i%TRUCK_COLORS.length] };
-  });
-
-  const result = calculateScore();
-  saveToLeaderboard(result);
-  renderResults(result, finalGeos);
-  setGameActive(false);
-  showScreen('screen-results');
-  setTimeout(() => initResultsMap(finalGeos, sysGeoMap), 150);
+  document.getElementById('submit-btn').textContent='⏳ Scoring…';
+  document.getElementById('submit-btn').disabled=true;
+  const finalGeos={},sysGeoMap={};
+  trucks.filter(t=>t.orders.length).forEach((t,i)=>{const s=optimizeStopOrder(getUniqueStores(t.orders)),lls=[[DEPOT.lat,DEPOT.lng],...s.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];finalGeos[t.id]={geo:null,lls,color:TRUCK_COLORS[i%TRUCK_COLORS.length],name:t.name};});
+  SYS_ROUTES.forEach((sr,i)=>{const ids=sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean),ord=optimizeStopOrder(ids),lls=[[DEPOT.lat,DEPOT.lng],...ord.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];sysGeoMap[sr.num]={geo:null,lls,color:TRUCK_COLORS[i%TRUCK_COLORS.length]};});
+  const result=calculateScore();saveToLeaderboard(result);renderResults(result,finalGeos);setGameActive(false);showScreen('screen-results');setTimeout(()=>initResultsMap(finalGeos,sysGeoMap),150);
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 7. DRAG AND DROP
+// DRAG AND DROP
 // ═══════════════════════════════════════════════════════════════
-function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-
-function dropToTruck(e, tid) {
-  e.preventDefault(); e.currentTarget.classList.remove('drag-over');
-  if (!draggedOrder) return;
-  if (dragSource === 'truck_'+tid) return;
-  const truck = trucks.find(t => t.id === tid);
-  if (truck) {
-    const currentWeight = truck.orders.reduce((s,o) => s + o.weight, 0);
-    if (currentWeight + draggedOrder.weight > CAP.weight) {
-      showToast(`⚖️ Over weight limit! Adding ${draggedOrder.storeName} would reach ${Math.round(currentWeight + draggedOrder.weight).toLocaleString()} lbs (limit: 43,500 lbs)`);
-      draggedOrder = null; dragSource = null;
-      return;
-    }
-  }
-  removeFromSource();
-  if (truck) truck.orders.push(draggedOrder);
-  draggedOrder = null; dragSource = null;
-  renderAll();
-  updateMarkerColors();
-  scheduleRouteUpdate(tid);
-  updateMilesOverlay();
+function onDragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function onDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function dropToTruck(e,tid){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  if(!draggedOrder)return;if(dragSource==='truck_'+tid)return;
+  const truck=trucks.find(t=>t.id===tid);
+  if(truck){const w=truck.orders.reduce((s,o)=>s+o.weight,0);if(w+draggedOrder.weight>CAP.weight){showToast(`⚖️ Over weight limit! Adding ${draggedOrder.storeName} would reach ${Math.round(w+draggedOrder.weight).toLocaleString()} lbs (limit: 43,500 lbs)`);draggedOrder=null;dragSource=null;return;}}
+  removeFromSource();if(truck)truck.orders.push(draggedOrder);draggedOrder=null;dragSource=null;
+  renderAll();updateMarkerColors();scheduleRouteUpdate(tid);updateMilesOverlay();
 }
-
-function dropToPool(e) {
-  e.preventDefault();
-  if (!draggedOrder || dragSource === 'pool') return;
-  const srcTid = dragSource && dragSource.startsWith('truck_') ? parseInt(dragSource.replace('truck_','')) : null;
-  removeFromSource();
-  poolOrders.push(draggedOrder);
-  draggedOrder = null; dragSource = null;
-  renderAll();
-  updateMarkerColors();
-  if (srcTid) scheduleRouteUpdate(srcTid);
-  updateMilesOverlay();
-}
-
-function removeFromSource() {
-  if (dragSource === 'pool') { poolOrders = poolOrders.filter(o => o.id !== draggedOrder.id); }
-  else if (dragSource && dragSource.startsWith('truck_')) {
-    const sid = parseInt(dragSource.replace('truck_',''));
-    const st = trucks.find(t => t.id === sid);
-    if (st) st.orders = st.orders.filter(o => o.id !== draggedOrder.id);
-  }
-}
+function dropToPool(e){e.preventDefault();if(!draggedOrder||dragSource==='pool')return;const src=dragSource&&dragSource.startsWith('truck_')?parseInt(dragSource.replace('truck_','')):null;removeFromSource();poolOrders.push(draggedOrder);draggedOrder=null;dragSource=null;renderAll();updateMarkerColors();if(src)scheduleRouteUpdate(src);updateMilesOverlay();}
+function removeFromSource(){if(dragSource==='pool'){poolOrders=poolOrders.filter(o=>o.id!==draggedOrder.id);}else if(dragSource&&dragSource.startsWith('truck_')){const st=trucks.find(t=>t.id===parseInt(dragSource.replace('truck_','')));if(st)st.orders=st.orders.filter(o=>o.id!==draggedOrder.id);}}
 
 // ═══════════════════════════════════════════════════════════════
-// 8. RENDER FUNCTIONS
+// RENDER
 // ═══════════════════════════════════════════════════════════════
-function renderPool() {
-  const pool = document.getElementById('order-pool');
-  pool.innerHTML = '';
-  const badge = document.getElementById('pool-badge');
-  if (badge) badge.textContent = poolOrders.length;
-
-  const q = poolSearch.trim().toLowerCase();
-  let visible = poolOrders.filter(o => {
-    if (q && !o.storeName.toLowerCase().includes(q) && !o.id.toLowerCase().includes(q) && !o.store.includes(q)) return false;
-    if (poolFilters.has('p9') && o.priority !== 9) return false;
-    if (poolFilters.has('48') && !o.restricted) return false;
-    if (poolFilters.has('heavy') && o.weight < 10000) return false;
+function renderPool(){
+  const pool=document.getElementById('order-pool');pool.innerHTML='';
+  const badge=document.getElementById('pool-badge');if(badge)badge.textContent=poolOrders.length;
+  const q=poolSearch.trim().toLowerCase();
+  let visible=poolOrders.filter(o=>{
+    if(q&&!o.storeName.toLowerCase().includes(q)&&!o.id.toLowerCase().includes(q)&&!o.store.includes(q))return false;
+    if(poolFilters.has('p9')&&o.priority!==9)return false;
+    if(poolFilters.has('48')&&!o.restricted)return false;
+    if(poolFilters.has('heavy')&&o.weight<10000)return false;
     return true;
   });
-
-  visible.sort((a,b) => {
-    if (poolSort==='name-asc')   return a.storeName.localeCompare(b.storeName);
-    if (poolSort==='name-desc')  return b.storeName.localeCompare(a.storeName);
-    if (poolSort==='weight-desc') return b.weight - a.weight;
-    if (poolSort==='weight-asc')  return a.weight - b.weight;
-    if (poolSort==='cases-desc')  return b.cases - a.cases;
-    if (poolSort==='window')      return a.winOpen - b.winOpen;
+  visible.sort((a,b)=>{
+    if(poolSort==='name-asc')return a.storeName.localeCompare(b.storeName);
+    if(poolSort==='name-desc')return b.storeName.localeCompare(a.storeName);
+    if(poolSort==='weight-desc')return b.weight-a.weight;
+    if(poolSort==='weight-asc')return a.weight-b.weight;
+    if(poolSort==='cases-desc')return b.cases-a.cases;
+    if(poolSort==='window')return a.winOpen-b.winOpen;
     return 0;
   });
-
-  if (!poolOrders.length) {
-    pool.innerHTML = '<div style="font-size:14px;color:var(--green);padding:6px;">✅ All orders assigned!</div>';
-    return;
-  }
-  if (!visible.length) {
-    pool.innerHTML = '<div style="font-size:14px;color:var(--text3);padding:6px;">No orders match filters.</div>';
-    return;
-  }
-  visible.forEach(o => pool.appendChild(makePoolChip(o)));
+  if(!poolOrders.length){pool.innerHTML='<div style="font-size:14px;color:var(--green);padding:6px;">✅ All orders assigned!</div>';return;}
+  if(!visible.length){pool.innerHTML='<div style="font-size:14px;color:var(--text3);padding:6px;">No orders match filters.</div>';return;}
+  visible.forEach(o=>pool.appendChild(makePoolChip(o)));
 }
-
-function toggleFilter(key) {
-  if (poolFilters.has(key)) poolFilters.delete(key); else poolFilters.add(key);
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  poolFilters.forEach(k => { const el = document.getElementById('f-'+k); if(el) el.classList.add('active'); });
-  renderPool();
-}
-
-function makePoolChip(o) {
-  const d = document.createElement('div');
-  let cls = 'order-chip';
-  if (o.priority===9 && o.restricted) cls+=' is-restricted';
-  else if (o.priority===9) cls+=' is-priority';
-  else if (o.restricted) cls+=' is-restricted';
-  d.className = cls;
-  d.draggable = true;
-  d.dataset.id = o.id;
-  d.title = `${o.id}\n${o.storeName} (${o.store})\nWindow: ${o.window}\nCases: ${o.cases} · ${Math.round(o.weight).toLocaleString()} lbs`;
-
-  let flags = '';
-  const wCol = windowBadgeColor(o.winOpen);
-  flags += `<span class="cflag cf-tw" style="background:rgba(0,0,0,0.25);color:${wCol};border:1px solid ${wCol}40;" title="Delivery window: ${o.window}">${windowLabel(o)}</span>`;
-  if (o.priority===9) flags += '<span class="cflag cf-p9" title="Priority 9 — must arrive 4:00–8:00am.">P9</span>';
-  if (o.restricted) flags += `<span class="cflag cf-48">48'</span>`;
-
-  d.innerHTML = `<div class="chip-id">${o.id}</div><div class="chip-store">${o.storeName}</div><div class="chip-sub">${o.cases.toLocaleString()} cs · ${Math.round(o.weight).toLocaleString()} lbs</div><div class="chip-flags">${flags}</div>`;
-  d.addEventListener('dragstart', e => { draggedOrder=o; dragSource='pool'; setTimeout(()=>d.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
-  d.addEventListener('dragend', () => d.classList.remove('dragging'));
-  d.addEventListener('contextmenu', e => { e.preventDefault(); if (!window._touchLongPressActive) openCtx(e, o, null); });
+function toggleFilter(key){if(poolFilters.has(key))poolFilters.delete(key);else poolFilters.add(key);document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));poolFilters.forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.classList.add('active');});renderPool();}
+function makePoolChip(o){
+  const d=document.createElement('div');
+  let cls='order-chip';if(o.priority===9&&o.restricted)cls+=' is-restricted';else if(o.priority===9)cls+=' is-priority';else if(o.restricted)cls+=' is-restricted';
+  d.className=cls;d.draggable=true;d.dataset.id=o.id;
+  let flags='';const wc=windowBadgeColor(o.winOpen);flags+=`<span class="cflag cf-tw" style="background:rgba(0,0,0,0.25);color:${wc};border:1px solid ${wc}40;">${windowLabel(o)}</span>`;
+  if(o.priority===9)flags+='<span class="cflag cf-p9">P9</span>';
+  if(o.restricted)flags+=`<span class="cflag cf-48">48'</span>`;
+  d.innerHTML=`<div class="chip-id">${o.id}</div><div class="chip-store">${o.storeName}</div><div class="chip-sub">${o.cases.toLocaleString()} cs · ${Math.round(o.weight).toLocaleString()} lbs</div><div class="chip-flags">${flags}</div>`;
+  d.addEventListener('dragstart',e=>{draggedOrder=o;dragSource='pool';setTimeout(()=>d.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+  d.addEventListener('dragend',()=>d.classList.remove('dragging'));
+  d.addEventListener('contextmenu',e=>{e.preventDefault();if(!window._touchLongPressActive)openCtx(e,o,null);});
   return d;
 }
-
-function renderTrucks() {
-  const sec = document.getElementById('trucks-section');
-  sec.innerHTML = '';
-  trucks.forEach((t, idx) => {
-    const color = TRUCK_COLORS[idx % TRUCK_COLORS.length];
-    const totC = t.orders.reduce((a,o)=>a+o.cases,0);
-    const totW = t.orders.reduce((a,o)=>a+o.weight,0);
-    const pctC = Math.round((totC/CAP.cases)*100);
-    const pctW = Math.round((totW/CAP.weight)*100);
-    const capClsC = pctC>100?'over':pctC>80?'warn':'good';
-    const capClsW = pctW>100?'over':pctW>90?'warn':pctW>75?'warn':'good';
-    const miles = getTruckMiles(t);
-    const stores = getUniqueStores(t.orders).map(id=>STORE_ABBR[id]).join(' → ');
-
-    const card = document.createElement('div');
-    card.className = 'truck-card';
-
-    const wCheck = t.orders.length > 0 ? checkWindowFeasibility(t.orders) : null;
-    const wIndicator = !wCheck || t.orders.length===0 ? '' :
-      wCheck.ok && wCheck.waitMins < 60 ? '<span style="font-size:12px;background:rgba(15,186,128,0.15);color:var(--green);padding:2px 7px;border-radius:3px;font-weight:700;">🟢 Windows OK</span>' :
-      wCheck.ok ? '<span style="font-size:12px;background:rgba(251,191,36,0.15);color:var(--amber);padding:2px 7px;border-radius:3px;font-weight:700;" title="Windows are feasible but some waiting time between stops">🟡 Windows tight</span>' :
-      `<span style="font-size:12px;background:rgba(240,76,90,0.15);color:#fca5a5;padding:2px 7px;border-radius:3px;font-weight:700;" title="${wCheck.violations.map(v=>v.store+': '+v.msg).join(' | ')}">🔴 Window conflict</span>`;
-    card.innerHTML = `
-      <div class="truck-head">
-        <div class="truck-color-bar" style="background:${color}"></div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span class="truck-name">${t.name}</span>
-            ${totW>CAP.weight?`<span style="font-size:12px;background:rgba(240,76,90,0.2);color:#fca5a5;padding:2px 6px;border-radius:3px;font-weight:700">⚠ ${Math.round(totW-CAP.weight).toLocaleString()} lbs over weight</span>`:''}
-            ${wIndicator}
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:1px;">
-            <span class="truck-stats">${t.orders.length} orders · ${totC.toLocaleString()} cs · ${Math.round(totW).toLocaleString()} lbs</span>
-            ${miles>0?`<span class="truck-miles">~${miles.toLocaleString()} mi</span>`:''}
-          </div>
-          ${stores ? `<div style="font-size:13px;color:var(--text3);margin-top:1px;">${stores}</div>` : ''}
-        </div>
-        <button class="btn-rm" onclick="removeTruck(${t.id})" title="Remove truck">✕</button>
-      </div>
-      <div class="cap-row">
-        <span class="cap-label">Cases</span>
-        <div class="cap-bar"><div class="cap-fill ${capClsC}" style="width:${Math.min(100,pctC)}%"></div></div>
-        <span class="cap-pct">${pctC}%</span>
-      </div>
-      <div class="cap-row" style="flex-direction:column;align-items:stretch;gap:3px;padding:4px 9px 6px;">
-        <div style="display:flex;align-items:center;gap:7px;">
-          <span class="cap-label">Weight</span>
-          <div class="cap-bar"><div class="cap-fill ${capClsW}" style="width:${Math.min(100,pctW)}%"></div></div>
-          <span style="font-size:12px;font-family:var(--mono);white-space:nowrap;color:${pctW>=100?'var(--red)':pctW>=75?'var(--amber)':'var(--text3)'};">${pctW}%</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;padding:0 0 0 41px;font-size:13px;font-family:var(--mono);">
-          <span style="color:var(--text2);">${Math.round(totW).toLocaleString()} / 43,500 lbs used</span>
-          <span style="color:${pctW>=100?'var(--red)':pctW>=75?'var(--amber)':'var(--green)'};">${Math.round(CAP.weight-totW).toLocaleString()} lbs left</span>
-        </div>
-      </div>
-      <div class="drop-zone ${!t.orders.length?'':'filled'}" data-tid="${t.id}"
-           ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="dropToTruck(event,${t.id})">
-        ${!t.orders.length ? '<span class="drop-hint">📦 Drop orders here</span>' : ''}
-      </div>`;
-
-    const dz = card.querySelector('.drop-zone');
-    t.orders.forEach(o => dz.appendChild(makeTruckRow(o, t.id)));
+function renderTrucks(){
+  const sec=document.getElementById('trucks-section');sec.innerHTML='';
+  trucks.forEach((t,idx)=>{
+    const color=TRUCK_COLORS[idx%TRUCK_COLORS.length];
+    const totC=t.orders.reduce((a,o)=>a+o.cases,0),totW=t.orders.reduce((a,o)=>a+o.weight,0);
+    const pctC=Math.round(totC/CAP.cases*100),pctW=Math.round(totW/CAP.weight*100);
+    const capC=pctC>100?'over':pctC>80?'warn':'good',capW=pctW>100?'over':pctW>90?'warn':pctW>75?'warn':'good';
+    const miles=getTruckMiles(t),stores=getUniqueStores(t.orders).map(id=>STORE_ABBR[id]).join(' → ');
+    const wCheck=t.orders.length>0?checkWindowFeasibility(t.orders):null;
+    const wInd=!wCheck||!t.orders.length?'':wCheck.ok&&wCheck.waitMins<60?'<span style="font-size:12px;background:rgba(15,186,128,0.15);color:var(--green);padding:2px 7px;border-radius:3px;font-weight:700;">🟢 Windows OK</span>':wCheck.ok?'<span style="font-size:12px;background:rgba(251,191,36,0.15);color:var(--amber);padding:2px 7px;border-radius:3px;font-weight:700;">🟡 Windows tight</span>':`<span style="font-size:12px;background:rgba(240,76,90,0.15);color:#fca5a5;padding:2px 7px;border-radius:3px;font-weight:700;">🔴 Window conflict</span>`;
+    const card=document.createElement('div');card.className='truck-card';
+    card.innerHTML=`<div class="truck-head"><div class="truck-color-bar" style="background:${color}"></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span class="truck-name">${t.name}</span>${totW>CAP.weight?`<span style="font-size:12px;background:rgba(240,76,90,0.2);color:#fca5a5;padding:2px 6px;border-radius:3px;font-weight:700">⚠ ${Math.round(totW-CAP.weight).toLocaleString()} lbs over</span>`:''} ${wInd}</div><div style="display:flex;gap:8px;align-items:center;margin-top:1px;"><span class="truck-stats">${t.orders.length} orders · ${totC.toLocaleString()} cs · ${Math.round(totW).toLocaleString()} lbs</span>${miles>0?`<span class="truck-miles">~${miles.toLocaleString()} mi</span>`:''}</div>${stores?`<div style="font-size:13px;color:var(--text3);margin-top:1px;">${stores}</div>`:''}</div><button class="btn-rm" onclick="removeTruck(${t.id})">✕</button></div><div class="cap-row"><span class="cap-label">Cases</span><div class="cap-bar"><div class="cap-fill ${capC}" style="width:${Math.min(100,pctC)}%"></div></div><span class="cap-pct">${pctC}%</span></div><div class="cap-row" style="flex-direction:column;align-items:stretch;gap:3px;padding:4px 9px 6px;"><div style="display:flex;align-items:center;gap:7px;"><span class="cap-label">Weight</span><div class="cap-bar"><div class="cap-fill ${capW}" style="width:${Math.min(100,pctW)}%"></div></div><span style="font-size:12px;font-family:var(--mono);white-space:nowrap;color:${pctW>=100?'var(--red)':pctW>=75?'var(--amber)':'var(--text3)'};">${pctW}%</span></div><div style="display:flex;justify-content:space-between;padding:0 0 0 41px;font-size:13px;font-family:var(--mono);"><span style="color:var(--text2);">${Math.round(totW).toLocaleString()} / 43,500 lbs</span><span style="color:${pctW>=100?'var(--red)':pctW>=75?'var(--amber)':'var(--green)'};">${Math.round(CAP.weight-totW).toLocaleString()} left</span></div></div><div class="drop-zone" data-tid="${t.id}" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="dropToTruck(event,${t.id})">${!t.orders.length?'<span class="drop-hint">📦 Drop orders here</span>':''}</div>`;
+    const dz=card.querySelector('.drop-zone');t.orders.forEach(o=>dz.appendChild(makeTruckRow(o,t.id)));
     sec.appendChild(card);
   });
 }
-
-function makeTruckRow(o, tid) {
-  const d = document.createElement('div');
-  d.className = 'order-row';
-  d.draggable = true;
-  d.dataset.id = o.id;
-  let flags = '';
-  const wCol = windowBadgeColor(o.winOpen);
-  flags += `<span class="cflag cf-tw" style="background:rgba(0,0,0,0.25);color:${wCol};border:1px solid ${wCol}40;" title="Delivery window: ${o.window}">${windowLabel(o)}</span>`;
-  if (o.priority===9) flags += '<span class="cflag cf-p9" title="Priority 9 — must arrive 4:00–8:00am. Departs Sacramento ~1:30am.">P9</span>';
-  if (o.restricted) flags += `<span class="cflag cf-48">48'</span>`;
-  d.innerHTML = `<span class="or-store">${o.storeName}</span><span class="or-cases">${o.cases.toLocaleString()} cs</span><span class="or-weight">${Math.round(o.weight).toLocaleString()} lbs</span><span class="chip-flags">${flags}</span>`;
-  d.addEventListener('dragstart', e => { draggedOrder=o; dragSource='truck_'+tid; setTimeout(()=>d.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
-  d.addEventListener('dragend', () => d.classList.remove('dragging'));
-  d.addEventListener('contextmenu', e => { e.preventDefault(); if (!window._touchLongPressActive) openCtx(e, o, tid); });
+function makeTruckRow(o,tid){
+  const d=document.createElement('div');d.className='order-row';d.draggable=true;d.dataset.id=o.id;
+  const wc=windowBadgeColor(o.winOpen);let flags=`<span class="cflag cf-tw" style="background:rgba(0,0,0,0.25);color:${wc};border:1px solid ${wc}40;">${windowLabel(o)}</span>`;
+  if(o.priority===9)flags+='<span class="cflag cf-p9">P9</span>';
+  if(o.restricted)flags+=`<span class="cflag cf-48">48'</span>`;
+  d.innerHTML=`<span class="or-store">${o.storeName}</span><span class="or-cases">${o.cases.toLocaleString()} cs</span><span class="or-weight">${Math.round(o.weight).toLocaleString()} lbs</span><span class="chip-flags">${flags}</span>`;
+  d.addEventListener('dragstart',e=>{draggedOrder=o;dragSource='truck_'+tid;setTimeout(()=>d.classList.add('dragging'),0);e.dataTransfer.effectAllowed='move';});
+  d.addEventListener('dragend',()=>d.classList.remove('dragging'));
+  d.addEventListener('contextmenu',e=>{e.preventDefault();if(!window._touchLongPressActive)openCtx(e,o,tid);});
   return d;
 }
-
-function renderAll() {
-  renderPool();
-  renderTrucks();
-  updateTopBar();
-}
-
-function updateTopBar() {
-  const assigned = ORDERS.length - poolOrders.length;
-  let violations = 0;
-  trucks.forEach(t => {
-    const totW = t.orders.reduce((a,o)=>a+o.weight,0);
-    if (totW>CAP.weight) violations++;
-  });
-
-  const aEl = document.getElementById('stat-assigned');
-  const tEl = document.getElementById('stat-trucks');
-  const vEl = document.getElementById('stat-violations');
-  const activeTrucks = trucks.filter(t=>t.orders.length).length;
-
-  if (aEl) { aEl.textContent = assigned+'/'+ORDERS.length; aEl.className = 'gh-val'+(assigned===ORDERS.length?' g':assigned<ORDERS.length?' a':''); }
-  if (tEl) { tEl.textContent = activeTrucks; tEl.className = 'gh-val'+(activeTrucks<=SYSTEM_TRUCKS?' g':' a'); }
-  if (vEl) { vEl.textContent = violations; vEl.className = 'gh-val'+(violations>0?' r':' g'); }
+function renderAll(){renderPool();renderTrucks();updateTopBar();}
+function updateTopBar(){
+  const assigned=ORDERS.length-poolOrders.length;
+  let viols=0;trucks.forEach(t=>{if(t.orders.reduce((s,o)=>s+o.weight,0)>CAP.weight)viols++;});
+  const aEl=document.getElementById('stat-assigned'),tEl=document.getElementById('stat-trucks'),vEl=document.getElementById('stat-violations');
+  const act=trucks.filter(t=>t.orders.length).length;
+  if(aEl){aEl.textContent=assigned+'/'+ORDERS.length;aEl.className='gh-val'+(assigned===ORDERS.length?' g':assigned<ORDERS.length?' a':'');}
+  if(tEl){tEl.textContent=act;tEl.className='gh-val'+(act<=SYSTEM_TRUCKS?' g':' a');}
+  if(vEl){vEl.textContent=viols;vEl.className='gh-val'+(viols>0?' r':' g');}
+  updateTabBadge();
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 9. SCORING
+// SCORING
 // ═══════════════════════════════════════════════════════════════
-function calculateScore() {
-  const violations=[], sb={};
-
+function calculateScore(){
+  const sb={};
   const yourMiles=getTotalMiles();
-  let milesScore=0;
-  if (yourMiles===0) { milesScore=0; }
-  else if (optimalMiles) {
-    milesScore = Math.round(400 * Math.min(1, optimalMiles / yourMiles));
-  } else { milesScore=200; }
-  sb.miles={label:'Miles efficiency',score:milesScore,max:400,pct:milesScore/400,
-    detail:optimalMiles?`Your ${yourMiles.toLocaleString()} mi vs optimal ${optimalMiles.toLocaleString()} mi (${Math.round((optimalMiles/yourMiles)*100)}%)`:`${yourMiles.toLocaleString()} mi total`};
+  let milesScore=yourMiles===0?0:optimalMiles?Math.round(400*Math.min(1,optimalMiles/yourMiles)):200;
+  sb.miles={label:'Miles efficiency',score:milesScore,max:400,pct:milesScore/400,detail:optimalMiles?`Your ${yourMiles.toLocaleString()} mi vs optimal ${optimalMiles.toLocaleString()} mi`:`${yourMiles.toLocaleString()} mi total`};
 
-  const activeTruckList = trucks.filter(t=>t.orders.length>0);
-  let windowViolations = 0, totalWindowedStores = 0;
-  const truckWindowResults = {};
-  activeTruckList.forEach(t => {
-    const storeIds = [...new Set(t.orders.map(o=>o.store))];
-    totalWindowedStores += storeIds.length;
-    const result = checkWindowFeasibility(t.orders);
-    truckWindowResults[t.id] = result;
-    if (!result.ok) windowViolations += result.violations.length;
-  });
-  const windowPct = totalWindowedStores > 0 ? Math.round(((totalWindowedStores - windowViolations) / totalWindowedStores) * 100) : 100;
-  const windowScore = Math.round(150 * Math.max(0, (totalWindowedStores - windowViolations) / Math.max(1, totalWindowedStores)));
-  sb.window={label:'Delivery window compliance',score:windowScore,max:150,pct:windowScore/150,
-    detail:`${totalWindowedStores - windowViolations}/${totalWindowedStores} stores reachable within windows (${windowPct}%)`,windowPct,windowViolations,truckWindowResults};
+  const active=trucks.filter(t=>t.orders.length>0);
+  let wViols=0,wTotal=0;const twRes={};
+  active.forEach(t=>{const ids=[...new Set(t.orders.map(o=>o.store))];wTotal+=ids.length;const r=checkWindowFeasibility(t.orders);twRes[t.id]=r;if(!r.ok)wViols+=r.violations.length;});
+  const wScore=Math.round(150*Math.max(0,(wTotal-wViols)/Math.max(1,wTotal)));
+  sb.window={label:'Delivery window compliance',score:wScore,max:150,pct:wScore/150,detail:`${wTotal-wViols}/${wTotal} stores reachable (${Math.round((wTotal-wViols)/Math.max(1,wTotal)*100)}%)`,windowPct:Math.round((wTotal-wViols)/Math.max(1,wTotal)*100),windowViolations:wViols,truckWindowResults:twRes};
 
-  const sysGroupsForMatch = SYS_ROUTES.map(sr=>({
-    num:sr.num, stores:new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean)),
-    orderIds:new Set(sr.orders)
-  }));
-  const truckMatchesGroup = (truck) => {
-    const truckOrderIds=new Set(truck.orders.map(o=>o.id));
-    return sysGroupsForMatch.find(sg=>{
-      const sysOnThisTruck=[...sg.orderIds].filter(id=>truckOrderIds.has(id));
-      if(sysOnThisTruck.length!==sg.orderIds.size) return false;
-      const extraOrders=truck.orders.filter(o=>!sg.orderIds.has(o.id));
-      if(extraOrders.length===0) return true;
-      return extraOrders.every(o=>sg.stores.has(o.store));
-    })||null;
-  };
-  const orderToTruckMap={};
-  activeTruckList.forEach(t=>{ t.orders.forEach(o=>{ orderToTruckMap[o.id]=t.id; }); });
-  let matchedOrders=0;
-  const matchedTruckSet=new Set();
-  activeTruckList.forEach(truck=>{
-    const mg=truckMatchesGroup(truck);
-    if(mg&&!matchedTruckSet.has(truck.id)){
-      matchedTruckSet.add(truck.id);
-      truck.orders.forEach(o=>{ if(mg.orderIds.has(o.id)) matchedOrders++; });
-    }
-  });
-  const matchPct=Math.round((matchedOrders/ORDERS.length)*100);
+  const sysGroups=SYS_ROUTES.map(sr=>({num:sr.num,stores:new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean)),orderIds:new Set(sr.orders)}));
+  const truckMatchesGroup=t=>{const tIds=new Set(t.orders.map(o=>o.id));return sysGroups.find(sg=>{const on=[...sg.orderIds].filter(id=>tIds.has(id));if(on.length!==sg.orderIds.size)return false;const ex=t.orders.filter(o=>!sg.orderIds.has(o.id));return ex.length===0||ex.every(o=>sg.stores.has(o.store));})};
+  let matchedOrders=0;const matchedTrucks=new Set();
+  active.forEach(t=>{const mg=truckMatchesGroup(t);if(mg&&!matchedTrucks.has(t.id)){matchedTrucks.add(t.id);t.orders.forEach(o=>{if(mg.orderIds.has(o.id))matchedOrders++;});}});
   const matchScore=Math.round(300*(matchedOrders/ORDERS.length));
-  sb.routematch={label:'Route match vs system',score:matchScore,max:300,pct:matchedOrders/ORDERS.length,
-    detail:`${matchedOrders}/${ORDERS.length} orders match system grouping (${matchPct}%)`,matchPct,matchedOrders};
+  sb.routematch={label:'Route match vs system',score:matchScore,max:300,pct:matchedOrders/ORDERS.length,detail:`${matchedOrders}/${ORDERS.length} orders match system grouping (${Math.round(matchedOrders/ORDERS.length*100)}%)`,matchPct:Math.round(matchedOrders/ORDERS.length*100),matchedOrders};
 
-  const assignedCount=ORDERS.length-poolOrders.length;
-  const assignedScore=Math.round(100*(assignedCount/ORDERS.length));
-  if (poolOrders.length>0) violations.push(`${poolOrders.length} order(s) not assigned`);
-  sb.assigned={label:'Orders assigned',score:assignedScore,max:100,pct:assignedCount/ORDERS.length,detail:`${assignedCount}/${ORDERS.length} orders`};
+  const assigned=ORDERS.length-poolOrders.length;
+  const assignedScore=Math.round(100*(assigned/ORDERS.length));
+  sb.assigned={label:'Orders assigned',score:assignedScore,max:100,pct:assigned/ORDERS.length,detail:`${assigned}/${ORDERS.length} orders`};
 
-  const timeRemaining = Math.max(0, 300 - elapsedSeconds);
-  const speedScore = Math.round(50 * Math.min(timeRemaining, 240) / 240);
-  sb.speed={label:'Speed bonus',score:speedScore,max:50,pct:speedScore/50,detail:`Completed with ${Math.floor(timeRemaining/60)}m ${timeRemaining%60}s remaining`};
+  const rem=Math.max(0,300-elapsedSeconds),speedScore=Math.round(50*Math.min(rem,240)/240);
+  sb.speed={label:'Speed bonus',score:speedScore,max:50,pct:speedScore/50,detail:`Completed with ${Math.floor(rem/60)}m ${rem%60}s remaining`};
 
-  const totalScore=milesScore+matchScore+windowScore+assignedScore+speedScore;
-  let grade='D';
-  if (totalScore>=950) grade='S'; else if (totalScore>=800) grade='A'; else if (totalScore>=620) grade='B'; else if (totalScore>=430) grade='C';
-
-  return {
-    playerName,totalScore,grade,sb,violations,
-    numTrucks:trucks.filter(t=>t.orders.length).length,
-    assignedCount,yourMiles,optimalMiles,
-    elapsedSeconds,timestamp:Date.now()
-  };
+  const total=milesScore+matchScore+wScore+assignedScore+speedScore;
+  let grade='D';if(total>=950)grade='S';else if(total>=800)grade='A';else if(total>=620)grade='B';else if(total>=430)grade='C';
+  return{playerName,totalScore:total,grade,sb,violations:[],numTrucks:active.length,assignedCount:assigned,yourMiles,optimalMiles,elapsedSeconds,timestamp:Date.now()};
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 10. RESULTS RENDER
+// RESULTS RENDER
 // ═══════════════════════════════════════════════════════════════
-function renderResults(r, finalGeos) {
-  document.getElementById('results-score').textContent = r.totalScore;
-  const circle = document.getElementById('results-circle');
-  const bdrColor = r.totalScore>=900?'#f59e0b':r.totalScore>=700?'var(--green)':r.totalScore>=500?'var(--accent)':'#6b7280';
-  circle.style.borderColor = bdrColor;
-
-  const gradeLabels = {S:'🏆 Legendary',A:'🌟 Excellent',B:'👍 Good',C:'📈 Needs work',D:'🔧 Keep trying'};
-  document.getElementById('results-headline').textContent = r.totalScore>=900?'Outstanding!':r.totalScore>=700?'Great Work!':r.totalScore>=500?'Good Effort!':'Nice Try!';
-  document.getElementById('results-grade-badge').innerHTML = `<div class="result-grade grade-${r.grade}">${r.grade} — ${gradeLabels[r.grade]}</div>`;
-  document.getElementById('results-sub').textContent = `👤 ${r.playerName} · ⏱️ ${formatTime(r.elapsedSeconds)}`;
-
-  document.getElementById('r-your-miles').textContent = r.yourMiles.toLocaleString()+' mi';
-  const optTxt = r.optimalMiles ? r.optimalMiles.toLocaleString()+' mi' : '—';
-  document.getElementById('r-opt-miles').textContent = optTxt;
-  if (r.optimalMiles && r.yourMiles) {
-    const eff = Math.round((r.optimalMiles/r.yourMiles)*100);
-    const effEl = document.getElementById('r-eff-pct');
-    effEl.textContent = eff+'%';
-    effEl.style.color = eff>=90?'var(--green)':eff>=75?'var(--amber)':'var(--red)';
-    const fillEl = document.getElementById('r-eff-fill');
-    fillEl.style.width = Math.min(100,eff)+'%';
-    fillEl.style.background = eff>=90?'var(--green)':eff>=75?'var(--amber)':'var(--red)';
-  }
-  const matchEl=document.getElementById('r-match-pct');
-  if (matchEl&&r.sb.routematch) { const mp=r.sb.routematch.matchPct??0; matchEl.textContent=mp+'%'; matchEl.style.color=mp>=90?'var(--green)':mp>=70?'var(--amber)':'var(--red)'; }
-  const matchLbl=document.querySelector('.r-match-label');
-  if (matchLbl) matchLbl.textContent='Route Match';
-
-  const colors = { miles:'#3b7ef8', routematch:'#8b5cf6', window:'#f0a623', assigned:'#0fba80', speed:'#06c0d4' };
-  let bkHtml = '<h3>Score breakdown</h3>';
-  Object.entries(r.sb).forEach(([k,v]) => {
-    if (v.hidden) return;
-    const c = colors[k] || 'var(--accent)';
-    bkHtml += `<div class="score-row"><div class="score-row-label">${v.label}${v.detail?`<br><span style="font-size:13px;color:var(--text3)">${v.detail}</span>`:''}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${Math.round(v.pct*100)}%;background:${c}"></div></div><div class="score-row-pts" style="color:${c}">${v.score}<span style="color:var(--text3);font-size:13px">/${v.max}</span></div></div>`;
-  });
-  document.getElementById('score-breakdown').innerHTML = bkHtml;
-
-  setTimeout(() => buildAnalysis(r), 100);
+function renderResults(r,finalGeos){
+  document.getElementById('results-score').textContent=r.totalScore;
+  const circ=document.getElementById('results-circle');
+  circ.style.borderColor=r.totalScore>=900?'#f59e0b':r.totalScore>=700?'var(--green)':r.totalScore>=500?'var(--accent)':'#6b7280';
+  const gl={S:'🏆 Legendary',A:'🌟 Excellent',B:'👍 Good',C:'📈 Needs work',D:'🔧 Keep trying'};
+  document.getElementById('results-headline').textContent=r.totalScore>=900?'Outstanding!':r.totalScore>=700?'Great Work!':r.totalScore>=500?'Good Effort!':'Nice Try!';
+  document.getElementById('results-grade-badge').innerHTML=`<div class="result-grade grade-${r.grade}">${r.grade} — ${gl[r.grade]}</div>`;
+  document.getElementById('results-sub').textContent=`👤 ${r.playerName} · ⏱️ ${formatTime(r.elapsedSeconds)}`;
+  document.getElementById('r-your-miles').textContent=r.yourMiles.toLocaleString()+' mi';
+  document.getElementById('r-opt-miles').textContent=r.optimalMiles?r.optimalMiles.toLocaleString()+' mi':'—';
+  if(r.optimalMiles&&r.yourMiles){const eff=Math.round(r.optimalMiles/r.yourMiles*100);const ee=document.getElementById('r-eff-pct');if(ee){ee.textContent=eff+'%';ee.style.color=eff>=90?'var(--green)':eff>=75?'var(--amber)':'var(--red)';}const ef=document.getElementById('r-eff-fill');if(ef){ef.style.width=Math.min(100,eff)+'%';ef.style.background=eff>=90?'var(--green)':eff>=75?'var(--amber)':'var(--red)';}}
+  const me=document.getElementById('r-match-pct');if(me&&r.sb.routematch){me.textContent=r.sb.routematch.matchPct+'%';me.style.color=r.sb.routematch.matchPct>=90?'var(--green)':r.sb.routematch.matchPct>=70?'var(--amber)':'var(--red)';}
+  const colors={miles:'#3b7ef8',routematch:'#8b5cf6',window:'#f0a623',assigned:'#0fba80',speed:'#06c0d4'};
+  let bk='<h3>Score breakdown</h3>';
+  Object.entries(r.sb).forEach(([k,v])=>{if(v.hidden)return;const c=colors[k]||'var(--accent)';bk+=`<div class="score-row"><div class="score-row-label">${v.label}${v.detail?`<br><span style="font-size:13px;color:var(--text3)">${v.detail}</span>`:''}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${Math.round(v.pct*100)}%;background:${c}"></div></div><div class="score-row-pts" style="color:${c}">${v.score}<span style="color:var(--text3);font-size:13px">/${v.max}</span></div></div>`;});
+  document.getElementById('score-breakdown').innerHTML=bk;
+  const m=(v,s,lower)=>v===s?'same':(lower?v<s:v>s)?'better':'worse';
+  document.getElementById('compare-grid').innerHTML=`<div class="compare-col"><div class="cc-title">Your routes <span class="cc-badge manual">Manual</span></div><div class="metric-row"><span class="metric-key">Score</span><span class="metric-val">${r.totalScore}/1000</span></div><div class="metric-row"><span class="metric-key">Total miles</span><span class="metric-val ${r.optimalMiles&&r.yourMiles?m(r.yourMiles,r.optimalMiles,true):''}">${r.yourMiles.toLocaleString()} mi</span></div><div class="metric-row"><span class="metric-key">Trucks used</span><span class="metric-val">${r.numTrucks}</span></div><div class="metric-row"><span class="metric-key">Orders assigned</span><span class="metric-val">${r.assignedCount}/${ORDERS.length}</span></div><div class="metric-row"><span class="metric-key">Time taken</span><span class="metric-val">${formatTime(r.elapsedSeconds)}</span></div></div><div class="compare-col sys"><div class="cc-title">System routes <span class="cc-badge sys">Optimized</span></div><div class="metric-row"><span class="metric-key">Score</span><span class="metric-val better">1000/1000</span></div><div class="metric-row"><span class="metric-key">Total miles</span><span class="metric-val better">${r.optimalMiles?r.optimalMiles.toLocaleString()+' mi':'—'}</span></div><div class="metric-row"><span class="metric-key">Trucks used</span><span class="metric-val better">${SYSTEM_TRUCKS}</span></div><div class="metric-row"><span class="metric-key">Orders assigned</span><span class="metric-val better">${ORDERS.length}/${ORDERS.length}</span></div><div class="metric-row"><span class="metric-key">Time taken</span><span class="metric-val better">&lt; 2 min</span></div></div>`;
+  setTimeout(()=>buildAnalysis(r),100);
   buildOrderComparison(r);
-
-  const cg = document.getElementById('compare-grid');
-  const m = (val,sys,lower) => val===sys?'same':((lower?val<sys:val>sys)?'better':'worse');
-  cg.innerHTML = `
-    <div class="compare-col">
-      <div class="cc-title">Your routes <span class="cc-badge manual">Manual</span></div>
-      <div class="metric-row"><span class="metric-key">Score</span><span class="metric-val ${m(r.totalScore,1000,false)}">${r.totalScore}/1000</span></div>
-      <div class="metric-row"><span class="metric-key">Total miles</span><span class="metric-val ${r.optimalMiles&&r.yourMiles?m(r.yourMiles,r.optimalMiles,true):''}">${r.yourMiles.toLocaleString()} mi</span></div>
-      <div class="metric-row"><span class="metric-key">Trucks used</span><span class="metric-val ${m(r.numTrucks,SYSTEM_TRUCKS,true)}">${r.numTrucks}</span></div>
-      <div class="metric-row"><span class="metric-key">Orders assigned</span><span class="metric-val ${r.assignedCount===ORDERS.length?'better':'worse'}">${r.assignedCount}/${ORDERS.length}</span></div>
-      <div class="metric-row"><span class="metric-key">Time taken</span><span class="metric-val">${formatTime(r.elapsedSeconds)}</span></div>
-    </div>
-    <div class="compare-col sys">
-      <div class="cc-title">System routes <span class="cc-badge sys">Optimized</span></div>
-      <div class="metric-row"><span class="metric-key">Score</span><span class="metric-val better">1000/1000</span></div>
-      <div class="metric-row"><span class="metric-key">Total miles</span><span class="metric-val better">${r.optimalMiles?r.optimalMiles.toLocaleString()+' mi':'—'}</span></div>
-      <div class="metric-row"><span class="metric-key">Trucks used</span><span class="metric-val better">${SYSTEM_TRUCKS}</span></div>
-      <div class="metric-row"><span class="metric-key">Orders assigned</span><span class="metric-val better">${ORDERS.length}/${ORDERS.length}</span></div>
-      <div class="metric-row"><span class="metric-key">Time taken</span><span class="metric-val better">&lt; 2 min</span></div>
-    </div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 11. LEADERBOARD
+// LEADERBOARD
 // ═══════════════════════════════════════════════════════════════
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwoxVZ7l1B7HwEZ_9yhzTW6bYkh6on3LdZAW7MR9ByBEjBMX5bDKuvR2HsBELLwujMN/exec';
-
-function saveToLeaderboard(r) {
-  const routeDetail = trucks.filter(t=>t.orders.length>0).map(t => {
-    const stores = optimizeStopOrder(getUniqueStores(t.orders));
-    const storeNames = stores.map(id => STORE_NAMES[id] || id);
-    const totW = t.orders.reduce((s,o)=>s+o.weight,0);
-    return { name: t.name, stops: storeNames, miles: getTruckMiles(t), weight: Math.round(totW) };
-  });
-  const routeSummary = routeDetail.map(t => t.name + ': ' + t.stops.join('→')).join(' | ');
-  const matchPct = r.sb && r.sb.routematch
-    ? Math.round(r.sb.routematch.pct * 100) + '%' : '';
-  const payload = {
-    timestamp:  new Date(r.timestamp).toLocaleString('en-US', {timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),
-    player:     r.playerName,
-    score:      r.totalScore,
-    grade:      r.grade,
-    miles:      r.yourMiles,
-    trucks:     r.numTrucks,
-    routeMatch: matchPct,
-    time:       formatTime(r.elapsedSeconds),
-    routes:     routeSummary,
-    orders:     r.assignedCount
-  };
-  fetch(SHEETS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).catch(err => console.log('Sheets error:', err));
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbwoxVZ7l1B7HwEZ_9yhzTW6bYkh6on3LdZAW7MR9ByBEjBMX5bDKuvR2HsBELLwujMN/exec';
+function saveToLeaderboard(r){
+  const routeDetail=trucks.filter(t=>t.orders.length>0).map(t=>{const s=optimizeStopOrder(getUniqueStores(t.orders)),sn=s.map(id=>STORE_NAMES[id]||id);return{name:t.name,stops:sn,miles:getTruckMiles(t),weight:Math.round(t.orders.reduce((a,o)=>a+o.weight,0))};});
+  const payload={timestamp:new Date(r.timestamp).toLocaleString('en-US',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}),player:r.playerName,score:r.totalScore,grade:r.grade,miles:r.yourMiles,trucks:r.numTrucks,routeMatch:r.sb&&r.sb.routematch?Math.round(r.sb.routematch.pct*100)+'%':'',time:formatTime(r.elapsedSeconds),routes:routeDetail.map(t=>t.name+': '+t.stops.join('→')).join(' | '),orders:r.assignedCount};
+  fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(e=>console.log('Sheets:',e));
 }
-
-function _renderLeaderboardRows(rows) {
-  const list = document.getElementById('lb-list');
-  if (!rows.length) { list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>'; return; }
-  const gc = {S:'#fcd34d',A:'#6ee7b7',B:'#93c5fd',C:'#c4b5fd',D:'#fca5a5'};
-  list.innerHTML = rows.map((e,i) => {
-    const rank = i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-    const uid = 'lb-routes-'+i;
-    let routesHtml = '';
-    if (Array.isArray(e.routes) && e.routes.length) {
-      routesHtml = `<div class="lb-routes" id="${uid}" style="display:none">` +
-        e.routes.map((r,ri) => {
-          const col = TRUCK_COLORS[ri % TRUCK_COLORS.length];
-          return `<div class="lb-route-row">
-            <div class="lb-route-name" style="border-left:3px solid ${col};padding-left:6px;">${r.name}</div>
-            <div class="lb-route-stops">${r.stops.join(' → ')}</div>
-            <div class="lb-route-stats">${r.miles} mi · ${r.weight.toLocaleString()} lbs</div>
-          </div>`;
-        }).join('') + '</div>';
-    } else if (typeof e.routes === 'string' && e.routes) {
-      routesHtml = `<div class="lb-routes" id="${uid}" style="display:none"><div style="font-size:13px;color:var(--text2);padding:4px 0;">${e.routes.replace(/\|/g,'<br>')}</div></div>`;
-    }
-    const gradeColor = gc[e.grade] || 'var(--text2)';
-    const milesStr = e.miles ? (Number(e.miles)||0).toLocaleString()+' mi · ' : '';
-    const violations = e.violations !== undefined ? e.violations : '—';
-    const violStr = violations !== '—' ? violations+' violation'+(violations!==1?'s':'') : '';
-    return `<div class="lb-row">
-      <div class="lb-rank">${rank}</div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="lb-name">${e.name||e.player||'Anonymous'}</span>
-          <span class="lb-grade" style="color:${gradeColor}">${e.grade||''}</span>
-        </div>
-        <div class="lb-meta">${e.trucks||0} trucks · ${milesStr}${violStr}${violStr&&e.time?' · ':''}${e.time||''}</div>
-        ${routesHtml?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''}
-        ${routesHtml}
-      </div>
-      <div class="lb-score">${e.score}</div>
-    </div>`;
-  }).join('');
+function renderLeaderboard(){
+  const list=document.getElementById('lb-list');list.innerHTML='<div class="lb-empty" style="color:var(--text3)">⏳ Loading…</div>';
+  fetch(SHEETS_URL,{method:'GET',mode:'cors'}).then(r=>r.json()).then(rows=>{
+    if(!Array.isArray(rows)||!rows.length){list.innerHTML='<div class="lb-empty">No scores yet.</div>';return;}
+    const gc={S:'#fcd34d',A:'#6ee7b7',B:'#93c5fd',C:'#c4b5fd',D:'#fca5a5'};
+    list.innerHTML=rows.map((e,i)=>{
+      const rank=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+      const uid='lb-routes-'+i;
+      let rh='';
+      if(typeof e.routes==='string'&&e.routes)rh=`<div class="lb-routes" id="${uid}" style="display:none"><div style="font-size:13px;color:var(--text2);padding:4px 0;">${e.routes.replace(/\|/g,'<br>')}</div></div>`;
+      return`<div class="lb-row"><div class="lb-rank">${rank}</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;"><span class="lb-name">${e.name||e.player||'Anonymous'}</span><span class="lb-grade" style="color:${gc[e.grade]||'var(--text2)'}">${e.grade||''}</span></div><div class="lb-meta">${e.trucks||0} trucks · ${e.time||''}</div>${rh?`<button class="lb-expand-btn" onclick="toggleLbRoutes('${uid}',this)">▶ View routes</button>`:''} ${rh}</div><div class="lb-score">${e.score}</div></div>`;
+    }).join('');
+  }).catch(()=>{list.innerHTML='<div class="lb-empty" style="color:var(--text3)">⚠️ Couldn\'t load leaderboard.</div>';});
 }
-
-function renderLeaderboard() {
-  const list = document.getElementById('lb-list');
-  list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⏳ Loading leaderboard…</div>';
-  fetch(SHEETS_URL, { method: 'GET', mode: 'cors' })
-    .then(resp => resp.json())
-    .then(rows => {
-      if (Array.isArray(rows) && rows.length) {
-        _renderLeaderboardRows(rows);
-      } else {
-        list.innerHTML = '<div class="lb-empty">No scores yet. Be the first!</div>';
-      }
-    })
-    .catch(() => {
-      list.innerHTML = '<div class="lb-empty" style="color:var(--text3)">⚠️ Couldn\'t load leaderboard — check your connection.</div>';
-    });
-}
-
-function toggleLbRoutes(uid, btn) {
-  const el = document.getElementById(uid);
-  if (!el) return;
-  const open = el.style.display !== 'none';
-  el.style.display = open ? 'none' : 'block';
-  btn.textContent = open ? '▶ View routes' : '▼ Hide routes';
-}
+function toggleLbRoutes(uid,btn){const e=document.getElementById(uid);if(!e)return;const open=e.style.display!=='none';e.style.display=open?'none':'block';btn.textContent=open?'▶ View routes':'▼ Hide routes';}
 
 // ═══════════════════════════════════════════════════════════════
-// 12. NAVIGATION & TIMER
+// NAVIGATION & TIMER
 // ═══════════════════════════════════════════════════════════════
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  if (id==='screen-results') { document.getElementById('submit-btn').textContent='✅ Submit routes & score'; document.getElementById('submit-btn').disabled=false; }
-}
-
-function goBack() { stopTimer(); showScreen('screen-intro'); }
-
-function showLeaderboard() {
-  fromScreen = document.querySelector('.screen.active')?.id || 'intro';
-  stopTimer();
-  renderLeaderboard();
-  showScreen('screen-leaderboard');
-}
-
-function startTimer() {
-  startTime = Date.now(); elapsedSeconds = 0;
-  const el = document.getElementById('timer');
-  if (el) { el.textContent = '5:00'; el.style.color = 'var(--green)'; }
-  timerInterval = setInterval(() => {
-    elapsedSeconds = Math.floor((Date.now()-startTime)/1000);
-    const remaining = Math.max(0, 300 - elapsedSeconds);
-    const m = String(Math.floor(remaining/60)).padStart(2,'0');
-    const s = String(remaining%60).padStart(2,'0');
-    if (el) {
-      el.textContent = m+':'+s;
-      el.style.color = remaining <= 60 ? 'var(--red)' : remaining <= 120 ? 'var(--amber)' : 'var(--green)';
-    }
-    if (remaining === 0) { stopTimer(); submitRoutes(); }
-  }, 500);
-}
-function stopTimer() { if (timerInterval) { clearInterval(timerInterval); timerInterval=null; } }
-function formatTime(secs) { return Math.floor(secs/60)+'m '+(secs%60)+'s'; }
-
-function getUniqueStores(orders) {
-  const seen = new Set();
-  return orders.filter(o=>{ if(seen.has(o.store)) return false; seen.add(o.store); return true; }).map(o=>o.store);
-}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');if(id==='screen-results'){document.getElementById('submit-btn').textContent='✅ Submit routes & score';document.getElementById('submit-btn').disabled=false;}}
+function goBack(){stopTimer();setGameActive(false);showScreen('screen-intro');}
+function showLeaderboard(){stopTimer();renderLeaderboard();showScreen('screen-leaderboard');}
+function startTimer(){startTime=Date.now();elapsedSeconds=0;const el=document.getElementById('timer');if(el){el.textContent='5:00';el.style.color='var(--green)';}timerInterval=setInterval(()=>{elapsedSeconds=Math.floor((Date.now()-startTime)/1000);const rem=Math.max(0,300-elapsedSeconds),m=String(Math.floor(rem/60)).padStart(2,'0'),s=String(rem%60).padStart(2,'0');if(el){el.textContent=m+':'+s;el.style.color=rem<=60?'var(--red)':rem<=120?'var(--amber)':'var(--green)';}if(rem===0){stopTimer();submitRoutes();}},500);}
+function stopTimer(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
+function formatTime(s){return Math.floor(s/60)+'m '+(s%60)+'s';}
+function getUniqueStores(orders){const seen=new Set();return orders.filter(o=>{if(seen.has(o.store))return false;seen.add(o.store);return true;}).map(o=>o.store);}
+document.getElementById('player-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')startGame();});
 
 // ═══════════════════════════════════════════════════════════════
 // ORDER COMPARISON TABLE
 // ═══════════════════════════════════════════════════════════════
-function buildOrderComparison(r) {
-  var el = document.getElementById('order-comparison-section');
-  if (!el) return;
-
-  var orderToSysRoute = {};
-  SYS_ROUTES.forEach(function(sr, i) {
-    sr.orders.forEach(function(oid) { orderToSysRoute[oid] = {sr: sr, idx: i}; });
-  });
-
-  var orderToUserTruck = {};
-  trucks.filter(function(t){return t.orders.length>0;}).forEach(function(t, ti) {
-    t.orders.forEach(function(o) { orderToUserTruck[o.id] = {truck: t, idx: ti}; });
-  });
-
-  var SYS_ROUTE_REASON = {
-    2:  'Brentwood + Buchanan cluster on the same East Bay I-4 corridor — one truck covers both.',
-    3:  'San Pablo + Novato are both P9 (4–8am). One Bay crossing via the Richmond–San Rafael Bridge serves both.',
-    6:  'Windsor (31,273 lbs) + W Vallejo Rt.22 (6,376 lbs) = 37,649 lbs — well under cap. Both are on the north Sacramento corridor, so the detour to W Vallejo costs only ~6 extra miles vs a dedicated W Vallejo solo run that would cost 66 miles.',
-    7:  'Richmond + San Rafael share the Richmond–San Rafael Bridge and both have P9 4–8am windows.',
-    14: 'Santa Rosa + Oakley are the last two stores once P9 and heavy routes are set. Compatible 6–10am windows.',
-    19: 'Concord (P9) + Pleasant Hill are 3 miles apart. Pleasant Hill opens 7am — still reachable before Concord\'s 8am close.',
-    21: 'W Vallejo order 39936375 is 38,376 lbs — nearly the full 43,500 lb cap. Must run solo.'
-  };
-
-  var correct=0, wrong=0, unassigned=0;
-
-  var html = '<div class="oc-wrap">';
-  html += '<div class="oc-header">'
-    + '<span class="oc-title">📋 Order-Level Assignment Comparison</span>'
-    + '<span class="oc-legend">'
-    + '<span class="oc-leg-item"><span style="color:var(--green);font-weight:700;">✓</span> Correct</span>'
-    + '<span class="oc-leg-item"><span style="color:#fca5a5;font-weight:700;">✗</span> Different grouping</span>'
-    + '<span class="oc-leg-item"><span style="color:var(--amber);font-weight:700;">⚠️</span> Unassigned</span>'
-    + '</span>'
-    + '</div>';
-
-  SYS_ROUTES.forEach(function(sr, i) {
-    var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-    var srOrderIds = new Set(sr.orders);
-    var srOrders = ORDERS.filter(function(o){ return srOrderIds.has(o.id); });
-    var sysStoreNames = sr.stops.map(function(s){return s.store;}).join(' + ');
-    var hasp9 = srOrders.some(function(o){return o.priority===9;});
-    var reason = SYS_ROUTE_REASON[sr.num] || '';
-
-    html += '<div class="oc-section-head">'
-      + '<div class="oc-dot" style="background:' + col + '"></div>'
-      + 'System Rt.' + sr.num + ' — ' + sysStoreNames
-      + (hasp9 ? ' <span class="p9b">P9</span>' : '')
-      + '<span style="margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--text3);">Departs ' + sr.start + '</span>'
-      + '</div>';
-
-    if (reason) {
-      html += '<div class="oc-why-box"><div class="oc-why-label">💡 Why these stores go together</div>' + reason + '</div>';
-    }
-
-    html += '<table class="oc-table"><thead><tr>'
-      + '<th>Order #</th><th>Store</th><th>Weight</th><th>Your truck</th><th style="text-align:center"></th><th>System truck</th><th>Efficiency note</th>'
-      + '</tr></thead><tbody>';
-
-    srOrders.forEach(function(o) {
-      var ut = orderToUserTruck[o.id];
-      var userTruckInfo = ut ? ut.truck : null;
-      var userTruckIdx = ut ? ut.idx : -1;
-      var userTruckColor = userTruckInfo ? TRUCK_COLORS[userTruckIdx % TRUCK_COLORS.length] : 'var(--amber)';
-      var userTruckName = userTruckInfo ? userTruckInfo.name : 'Unassigned';
-
-      var isCorrect = false;
-      if (userTruckInfo) {
-        var userTruckStores = new Set(getUniqueStores(userTruckInfo.orders));
-        var sysStores = new Set(sr.stops.map(function(s){return STOP_NAME_TO_ID[s.store];}).filter(Boolean));
-        isCorrect = sysStores.size === userTruckStores.size && [...sysStores].every(function(s){return userTruckStores.has(s);});
-      }
-
-      var rowCls = !userTruckInfo ? 'oc-unassigned' : isCorrect ? 'oc-correct' : 'oc-wrong';
-      var nameCls = !userTruckInfo ? 'unassigned' : isCorrect ? 'correct' : 'wrong';
-      var icon = !userTruckInfo ? '⚠️' : isCorrect ? '✓' : '✗';
-
-      if (isCorrect) correct++;
-      else if (!userTruckInfo) unassigned++;
-      else wrong++;
-
-      var effNote = '';
-      if (!isCorrect && userTruckInfo) {
-        var sysStoreArr = sr.stops.map(function(s){return STOP_NAME_TO_ID[s.store];}).filter(Boolean);
-        var sysMi = 0;
-        var orderedSys = optimizeStopOrder(sysStoreArr);
-        if (orderedSys.length) {
-          sysMi = getDistBetween('depot', orderedSys[0]);
-          for (var j=0;j<orderedSys.length-1;j++) sysMi += getDistBetween(orderedSys[j],orderedSys[j+1]);
-          sysMi = Math.round(sysMi);
-        }
-        var routeStoresOnTruck = getUniqueStores(userTruckInfo.orders)
-          .filter(function(sid){ return sysStoreArr.indexOf(sid) >= 0; });
-        var userMi = 0;
-        if (routeStoresOnTruck.length) {
-          var orderedUser = optimizeStopOrder(routeStoresOnTruck);
-          userMi = getDistBetween('depot', orderedUser[0]);
-          for (var k=0;k<orderedUser.length-1;k++) userMi += getDistBetween(orderedUser[k],orderedUser[k+1]);
-          userMi = Math.round(userMi);
-        }
-        var extraMi = userMi - sysMi;
-        if (extraMi > 0) {
-          effNote = '<strong>+' + extraMi + ' mi</strong> vs system. ' + reason.split('.')[0] + '.';
-        } else {
-          effNote = 'System groups this with ' + sysStoreNames + '.';
-        }
-      } else if (isCorrect) {
-        effNote = '<span style="color:var(--green)">✓ Correctly grouped</span>';
-      }
-
-      var sysRouteName = 'Rt.' + sr.num + ' (' + sysStoreNames + ')';
-
-      html += '<tr class="' + rowCls + '">'
-        + '<td class="oc-order-id">' + o.id + '</td>'
-        + '<td class="oc-store">' + o.storeName + (o.priority===9?'<br><span class="cflag cf-p9" style="font-size:10px;margin-top:2px;">P9</span>':'') + '</td>'
-        + '<td style="font-family:var(--mono);font-size:12px;color:var(--text2);text-align:right">' + Math.round(o.weight).toLocaleString() + ' lbs</td>'
-        + '<td><div class="oc-truck-cell"><span class="oc-truck-dot" style="background:' + userTruckColor + '"></span><span class="oc-truck-name ' + nameCls + '">' + userTruckName + '</span></div></td>'
-        + '<td class="oc-icon">' + icon + '</td>'
-        + '<td class="oc-system-truck" style="font-size:12px;">' + sysRouteName + '</td>'
-        + '<td class="oc-reason">' + effNote + '</td>'
-        + '</tr>';
+function buildOrderComparison(r){
+  const el=document.getElementById('order-comparison-section');if(!el)return;
+  const o2sys={};SYS_ROUTES.forEach((sr,i)=>sr.orders.forEach(oid=>o2sys[oid]={sr,idx:i}));
+  const o2truck={};trucks.filter(t=>t.orders.length>0).forEach((t,ti)=>t.orders.forEach(o=>o2truck[o.id]={truck:t,idx:ti}));
+  const SYS_REASON={2:'Brentwood + Buchanan cluster on the East Bay I-4 corridor.',3:'San Pablo + Novato both P9 (4–8am). Richmond–San Rafael Bridge serves both.',6:'Windsor (31k lbs) + W Vallejo Rt.22 (6k lbs) = 37.6k lbs, under cap. Same north corridor.',7:'Richmond + San Rafael share the Richmond–San Rafael Bridge. Both P9 4–8am.',14:'Santa Rosa + Oakley compatible 6–10am windows. Last two stores after P9 routes set.',19:'Concord (P9) + Pleasant Hill 3 miles apart. PH opens 7am, still before Concord 8am close.',21:'W Vallejo order alone is 38k lbs — 88% of the 43,500 lb weight cap.'};
+  let html='<div class="oc-wrap"><div class="oc-header"><span class="oc-title">📋 Order-Level Assignment Comparison</span></div>';
+  SYS_ROUTES.forEach((sr,i)=>{
+    const col=TRUCK_COLORS[i%TRUCK_COLORS.length],sg=new Set(sr.orders),srOrders=ORDERS.filter(o=>sg.has(o.id));
+    const sn=sr.stops.map(s=>s.store).join(' + '),hasp9=srOrders.some(o=>o.priority===9);
+    html+=`<div class="oc-section-head"><div class="oc-dot" style="background:${col}"></div>System Rt.${sr.num} — ${sn}${hasp9?' <span class="p9b">P9</span>':''}<span style="margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--text3);">Departs ${sr.start}</span></div>`;
+    if(SYS_REASON[sr.num])html+=`<div class="oc-why-box"><div class="oc-why-label">💡 Why these stores go together</div>${SYS_REASON[sr.num]}</div>`;
+    html+='<table class="oc-table"><thead><tr><th>Order #</th><th>Store</th><th class="right">Weight</th><th>Your truck</th><th style="text-align:center"></th></tr></thead><tbody>';
+    srOrders.forEach(o=>{
+      const ut=o2truck[o.id],truckName=ut?ut.truck.name:'Unassigned',col2=ut?TRUCK_COLORS[ut.idx%TRUCK_COLORS.length]:'var(--amber)';
+      let isCorrect=false;
+      if(ut){const ts=new Set(getUniqueStores(ut.truck.orders)),ss=new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean));isCorrect=ts.size===ss.size&&[...ss].every(s=>ts.has(s));}
+      const rc=!ut?'oc-unassigned':isCorrect?'oc-correct':'oc-wrong',nc=!ut?'unassigned':isCorrect?'correct':'wrong',ic=!ut?'⚠️':isCorrect?'✓':'✗';
+      html+=`<tr class="${rc}"><td class="oc-order-id">${o.id}</td><td class="oc-store">${o.storeName}</td><td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--text2);">${Math.round(o.weight).toLocaleString()} lbs</td><td><div class="oc-truck-cell"><span class="oc-truck-dot" style="background:${col2}"></span><span class="oc-truck-name ${nc}">${truckName}</span></div></td><td class="oc-icon">${ic}</td></tr>`;
     });
-
-    html += '</tbody></table>';
+    html+='</tbody></table>';
   });
-
-  html += '</div>';
-  el.innerHTML = html;
+  html+='</div>';el.innerHTML=html;
 }
 
 // ═══════════════════════════════════════════════════════════════
 // ROUTE ANALYSIS
 // ═══════════════════════════════════════════════════════════════
-function buildAnalysis(r) {
+function buildAnalysis(r){
+  const diffEl=document.getElementById('diff-section');if(!diffEl)return;
+  const sysGroups=SYS_ROUTES.map(sr=>({num:sr.num,stores:new Set(sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean)),orderIds:new Set(sr.orders)}));
+  function findMatchingGroup(t){const tIds=new Set(t.orders.map(o=>o.id));return sysGroups.find(sg=>{const on=[...sg.orderIds].filter(id=>tIds.has(id));if(on.length!==sg.orderIds.size)return false;const ex=t.orders.filter(o=>!sg.orderIds.has(o.id));return ex.length===0||ex.every(o=>sg.stores.has(o.store));})||null;}
+  const activeTrucks=trucks.filter(t=>t.orders.length>0);
+  const sysToUser={};const matchedTruckIds=new Set();
+  SYS_ROUTES.forEach(sr=>{const m=activeTrucks.find(t=>(findMatchingGroup(t)||{}).num===sr.num);sysToUser[sr.num]=m||null;if(m)matchedTruckIds.add(m.id);});
+  const o2truck={};activeTrucks.forEach(t=>t.orders.forEach(o=>o2truck[o.id]=t));
+  const matchedCount=Object.values(sysToUser).filter(Boolean).length,totalSys=SYS_ROUTES.length;
+  const sysRM={};SYS_ROUTES.forEach((sr,i)=>{const sg=sysGroups[i],ord=optimizeStopOrder([...sg.stores]);let mi=ord.length?getDistBetween('depot',ord[0]):0;for(let j=0;j<ord.length-1;j++)mi+=getDistBetween(ord[j],ord[j+1]);sysRM[sr.num]=Math.round(mi);});
 
-  var ROUTE_INSIGHTS = {
-    2:  { why: 'Brentwood and Buchanan are neighboring East Bay cities on the same I-4 corridor.',
-          cost: 'Two trucks depart Sacramento and drive the full East Bay leg independently \u2014 nearly identical miles driven twice.' },
-    3:  { why: 'San Pablo and Novato both have P9 4\u20138am windows. One Bay crossing via the Richmond\u2013San Rafael Bridge serves both.',
-          cost: 'Two P9 departures, each crossing the Bay independently, doubles the Bay transit miles.' },
-    6:  { why: 'Windsor (31,273 lbs) + W Vallejo order 39936302 (6,376 lbs) = 37,649 lbs \u2014 well under the 43,500 lb cap. Both destinations sit on the same north Sacramento corridor, so the detour to W Vallejo adds only ~6 miles. Without this pairing, W Vallejo would require a dedicated 66-mile solo run.',
-          cost: 'Splitting them sends a second truck all the way from Sacramento to W Vallejo for just 6,376 lbs \u2014 the most wasteful move on this board.' },
-    7:  { why: 'Richmond and San Rafael are connected by the Richmond\u2013San Rafael Bridge. Both have P9 4\u20138am windows.',
-          cost: 'Two trucks each pay the full Bay crossing. One bridge trip covers both.' },
-    14: { why: 'Santa Rosa and Oakley have compatible 6\u201310am windows and combined weight fits under cap. They\u2019re the last two stores once P9 and capacity routes are set.',
-          cost: 'Splitting them adds a full extra Sacramento departure leg for what is essentially one outer-region sweep.' },
-    19: { why: 'Concord (P9, 4\u20138am) and Pleasant Hill are 3 miles apart. Pleasant Hill\u2019s 7am open still allows both to be served before Concord\u2019s 8am close.',
-          cost: 'Two trucks to adjacent cities 3 miles apart is the highest-waste split on this board.' },
-    21: { why: 'W Vallejo\u2019s orders together hit ~45k lbs \u2014 nearly the full 43,500 lb weight cap.',
-          cost: 'This order alone uses 88% of the weight cap. No other order can fit on the same truck.' }
-  };
+  let html=`<div class="mr-summary"><div class="mr-summary-score ${matchedCount===totalSys?'perfect':matchedCount>=Math.ceil(totalSys*.6)?'ok':'poor'}">${matchedCount}/${totalSys}</div><div><div class="mr-summary-text">system routes matched</div><div class="mr-summary-sub">${matchedCount===totalSys?'✅ Perfect match':''+( totalSys-matchedCount)+' route(s) differ from system'}</div></div></div>`;
+  html+='<div class="sys-overview"><div class="sys-ov-head"><span>System Optimal Grouping</span><span style="font-size:12px;font-weight:400;letter-spacing:0;text-transform:none">Your match →</span></div>';
+  SYS_ROUTES.forEach((sr,i)=>{const col=TRUCK_COLORS[i%TRUCK_COLORS.length],sg=sysGroups[i],ord=optimizeStopOrder([...sg.stores]),stops=ord.map(id=>STORE_NAMES[id]).join(' + '),srO=ORDERS.filter(o=>sg.orderIds.has(o.id)),hp9=srO.some(o=>o.priority===9),ut=sysToUser[sr.num],mc=ut?'matched':'unmatched',mt=ut?'✓ '+ut.name:'✗ differs';html+=`<div class="sys-ov-row ${mc}"><div class="sys-ov-dot" style="background:${col}"></div><div class="sys-ov-num">Rt.${sr.num}</div><div class="sys-ov-stops">${stops}${hp9?' <span class="p9b">P9</span>':''} <span style="font-size:11px;color:var(--text3)">${sr.start}</span></div><div class="sys-ov-mi">${sysRM[sr.num]} mi</div><div class="sys-ov-match ${mc}">${mt}</div></div>`;});
+  html+='</div>';
+  diffEl.innerHTML='<div class="diff-header">📊 Route Comparison</div>'+html;
 
-  var sysStoreGroups = SYS_ROUTES.map(function(sr) {
-    return {
-      num: sr.num, start: sr.start,
-      stores: new Set(sr.stops.map(function(s){ return STOP_NAME_TO_ID[s.store]; }).filter(Boolean)),
-      orderIds: new Set(sr.orders)
-    };
-  });
-
-  function findMatchingGroup(truck) {
-    var truckOrderIds = new Set(truck.orders.map(function(o){ return o.id; }));
-    return sysStoreGroups.find(function(sg) {
-      var sysOnThisTruck = Array.from(sg.orderIds).filter(function(id){ return truckOrderIds.has(id); });
-      if (sysOnThisTruck.length !== sg.orderIds.size) return false;
-      var extraOrders = truck.orders.filter(function(o){ return !sg.orderIds.has(o.id); });
-      if (extraOrders.length === 0) return true;
-      return extraOrders.every(function(o){ return sg.stores.has(o.store); });
-    }) || null;
+  const aiBody=document.getElementById('analysis-ai-body');if(aiBody){
+    const notes=[];
+    const eff=r.optimalMiles&&r.yourMiles?Math.round(r.optimalMiles/r.yourMiles*100):null;
+    if(eff!==null)notes.push(eff>=95?`Miles efficiency: ${eff}% — very close to optimal.`:eff>=80?`Miles efficiency: ${eff}%. A few groupings added extra distance.`:`Miles efficiency: ${eff}%. Look for stores ending up far from their natural delivery cluster.`);
+    if(r.sb.window){const vl=r.sb.window.windowViolations;notes.push(vl===0?'Window compliance: 100% — all trucks can serve their stops within delivery windows.':`Window compliance: ${r.sb.window.windowPct}%. ${vl} store(s) cannot be reached within their window given the other stops on that truck.`);}
+    if(r.numTrucks>SYSTEM_TRUCKS)notes.push(`You used ${r.numTrucks-SYSTEM_TRUCKS} more truck(s) than the reference solution.`);
+    aiBody.textContent=notes.join('\n\n');
   }
-
-  var diffEl = document.getElementById('diff-section');
-  var activeTrucks = trucks.filter(function(t){ return t.orders.length > 0; });
-
-  var sysToUserTruck = {};
-  var matchedTruckIds = new Set();
-  SYS_ROUTES.forEach(function(sr) {
-    var match = activeTrucks.find(function(t){ return (findMatchingGroup(t) || {}).num === sr.num; });
-    sysToUserTruck[sr.num] = match || null;
-    if (match) matchedTruckIds.add(match.id);
-  });
-
-  var orderToUserTruck = {};
-  activeTrucks.forEach(function(t) {
-    t.orders.forEach(function(o){ orderToUserTruck[o.id] = t; });
-  });
-  var storeToUserTruck = {};
-  activeTrucks.forEach(function(t) {
-    getUniqueStores(t.orders).forEach(function(id){ storeToUserTruck[id] = t; });
-  });
-
-  var matchedCount = Object.values(sysToUserTruck).filter(Boolean).length;
-  var totalSys = SYS_ROUTES.length;
-  var scoreClass = matchedCount === totalSys ? 'perfect' : matchedCount >= Math.ceil(totalSys * 0.6) ? 'ok' : 'poor';
-  var summaryMsg = matchedCount === totalSys
-    ? '\u2705 Perfect \u2014 your solution matches the system exactly'
-    : matchedCount === 0
-      ? '\u274c No routes matched \u2014 see the breakdown below'
-      : (totalSys - matchedCount) + ' route' + (totalSys - matchedCount !== 1 ? 's' : '') + ' differ from system';
-
-  var html = '<div class="mr-summary">'
-    + '<div class="mr-summary-score ' + scoreClass + '">' + matchedCount + '/' + totalSys + '</div>'
-    + '<div><div class="mr-summary-text">system routes matched</div>'
-    + '<div class="mr-summary-sub">' + summaryMsg + '</div></div>'
-    + '</div>';
-
-  html += '<div class="sys-overview">';
-  html += '<div class="sys-ov-head"><span>System Solution \u2014 Optimal Grouping</span>'
-    + '<span style="font-size:12px;font-weight:400;letter-spacing:0;text-transform:none">Your match shown right</span></div>';
-
-  var sysRouteMiles = {};
-  SYS_ROUTES.forEach(function(sr, i) {
-    var sg = sysStoreGroups[i];
-    var ordered = optimizeStopOrder(Array.from(sg.stores));
-    var mi = ordered.length ? getDistBetween('depot', ordered[0]) : 0;
-    for (var j = 0; j < ordered.length-1; j++) mi += getDistBetween(ordered[j], ordered[j+1]);
-    sysRouteMiles[sr.num] = Math.round(mi);
-  });
-
-  SYS_ROUTES.forEach(function(sr, i) {
-    var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-    var sg = sysStoreGroups[i];
-    var ordered = optimizeStopOrder(Array.from(sg.stores));
-    var stopsStr = ordered.map(function(id){ return STORE_NAMES[id]; }).join(' + ');
-    var mi = sysRouteMiles[sr.num];
-    var srOrders = ORDERS.filter(function(o){ return sg.orderIds.has(o.id); });
-    var hasp9 = srOrders.some(function(o){ return o.priority === 9; });
-    var userTruck = sysToUserTruck[sr.num];
-    var matchCls = userTruck ? 'matched' : 'unmatched';
-    var matchTxt = userTruck ? '\u2713 ' + userTruck.name : '\u2194 differs from system';
-
-    html += '<div class="sys-ov-row ' + matchCls + '">'
-      + '<div class="sys-ov-dot" style="background:' + col + '"></div>'
-      + '<div class="sys-ov-num">Rt.' + sr.num + '</div>'
-      + '<div class="sys-ov-stops">' + stopsStr
-        + (hasp9 ? ' <span class="p9b">P9</span>' : '')
-        + ' <span style="font-size:11px;color:var(--text3)">' + sr.start + '</span>'
-      + '</div>'
-      + '<div class="sys-ov-mi">' + mi + ' mi</div>'
-      + '<div class="sys-ov-match ' + matchCls + '">' + matchTxt + '</div>'
-      + '</div>';
-  });
-  html += '</div>';
-
-  html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin:14px 0 8px">Where Each Order Belongs</div>';
-
-  SYS_ROUTES.forEach(function(sr, i) {
-    var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-    var sg = sysStoreGroups[i];
-    var ordered = optimizeStopOrder(Array.from(sg.stores));
-    var stopsStr = ordered.map(function(id){ return STORE_NAMES[id]; }).join(' + ');
-    var srOrders = ORDERS.filter(function(o){ return sg.orderIds.has(o.id); });
-    var totW = Math.round(srOrders.reduce(function(s,o){ return s+o.weight; }, 0));
-    var mi = sysRouteMiles[sr.num];
-    var hasp9 = srOrders.some(function(o){ return o.priority === 9; });
-    var userTruck = sysToUserTruck[sr.num];
-    var matched = !!userTruck;
-    var insight = ROUTE_INSIGHTS[sr.num] || {};
-
-    var involvedTrucks = {};
-    srOrders.forEach(function(o) {
-      var t = orderToUserTruck[o.id];
-      if (t) involvedTrucks[t.id] = t;
-    });
-    var involvedList = Object.values(involvedTrucks);
-    var userMiTotal = Math.round(involvedList.reduce(function(s, t) { return s + getTruckMiles(t); }, 0));
-    var milesDiff = userMiTotal - mi;
-
-    html += '<div class="ob-section ' + (matched ? 'matched' : 'unmatched') + '">';
-
-    html += '<div class="ob-head">'
-      + '<div class="ob-head-dot" style="background:' + col + '"></div>'
-      + '<div class="ob-head-info">'
-      + '<div class="ob-head-title">Rt.' + sr.num + ' \u2014 ' + stopsStr
-        + (hasp9 ? ' <span class="p9b">P9</span>' : '')
-        + '</div>'
-      + '<div class="ob-head-sub">' + mi + ' mi optimal &nbsp;\u00b7&nbsp; departs ' + sr.start + ' &nbsp;\u00b7&nbsp; ' + totW.toLocaleString() + ' lbs</div>'
-      + '</div>'
-      + '<div class="ob-head-status ' + (matched ? 'matched' : 'unmatched') + '">'
-        + (matched ? '\u2713 Matched \u2014 ' + userTruck.name : '\u2717 ' + involvedList.length + ' truck' + (involvedList.length !== 1 ? 's' : '') + ' used')
-      + '</div>'
-      + '</div>';
-
-    if (!matched && insight.why) {
-        var isSplit = involvedList.length > 1;
-        var extraOrdersOnTruck = (involvedList.length === 1)
-          ? involvedList[0].orders.filter(function(o){ return !sg.orderIds.has(o.id); })
-          : [];
-        var extraStoreNames = Array.from(new Set(
-          extraOrdersOnTruck.map(function(o){ return o.storeName; })
-        )).join(', ');
-        var costNote = '';
-        if (isSplit && insight.cost) {
-          costNote = insight.cost;
-        } else if (extraStoreNames) {
-          costNote = 'Your truck also carries <strong>' + extraStoreNames + '</strong> orders — that detour adds miles. See reconciliation below.';
-        }
-        html += '<div class="ob-insight">'
-          + '<div class="ob-insight-lbl">\ud83d\udca1 Why the system groups these together</div>'
-          + insight.why
-          + (costNote ? '<div style="margin-top:4px;color:var(--text3)"><strong style="color:var(--amber)">System reasoning:</strong> ' + costNote + '</div>' : '')
-          + '</div>';
-      }
-
-    html += '<div class="ob-col-heads">'
-      + '<div class="ob-col-head">Order #</div>'
-      + '<div class="ob-col-head">Store</div>'
-      + '<div class="ob-col-head" style="text-align:right">Weight</div>'
-      + '<div class="ob-col-head">Your Truck</div>'
-      + '<div class="ob-col-head"></div>'
-      + '</div>';
-
-    srOrders.forEach(function(o) {
-      var ut = orderToUserTruck[o.id];
-      var truckName = ut ? ut.name : 'unassigned';
-      var isCorrect = matched && ut && ut.id === userTruck.id;
-      var rowCls = !ut ? '' : isCorrect ? 'ok' : 'wrong';
-      var truckCls = !ut ? '' : isCorrect ? 'ok' : 'wrong';
-      var icon = !ut ? '\u2014' : isCorrect ? '\u2713' : '\u2717';
-
-      html += '<div class="ob-row ' + rowCls + '">'
-        + '<div class="ob-num">' + o.id + '</div>'
-        + '<div class="ob-store">' + o.storeName + '</div>'
-        + '<div class="ob-wt">' + Math.round(o.weight).toLocaleString() + ' lbs</div>'
-        + '<div class="ob-truck ' + truckCls + '">' + truckName + '</div>'
-        + '<div class="ob-icon">' + icon + '</div>'
-        + '</div>';
-    });
-
-    html += '</div>';
-  });
-
-  var extraTrucks = activeTrucks.filter(function(t){ return !matchedTruckIds.has(t.id); });
-  if (extraTrucks.length > 0) {
-    html += '<div class="mr-extra"><div class="mr-extra-title">\u26a0\ufe0f '
-      + extraTrucks.length + ' truck' + (extraTrucks.length !== 1 ? 's' : '') + ' with mixed groupings</div>';
-    extraTrucks.forEach(function(t) {
-      var tcol = TRUCK_COLORS[activeTrucks.indexOf(t) % TRUCK_COLORS.length];
-      var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){ return STORE_NAMES[id]; }).join(' \u2192 ');
-      html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--border);margin-top:4px;font-size:13px;">'
-        + '<div style="width:9px;height:9px;border-radius:50%;background:' + tcol + ';flex-shrink:0"></div>'
-        + '<span style="color:var(--text2);flex:1">' + t.name + ': ' + stores + '</span>'
-        + '<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">' + getTruckMiles(t) + ' mi</span>'
-        + '</div>';
-    });
-    html += '</div>';
-  }
-
-  if (r.optimalMiles) {
-    var totalGap = (r.yourMiles || 0) - (r.optimalMiles || 0);
-
-    var leftRows = activeTrucks.map(function(t, i) {
-      var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-      var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){ return STORE_NAMES[id]; }).join(' → ');
-      var mi = getTruckMiles(t);
-      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);font-size:13px;">'
-        + '<span style="width:8px;height:8px;border-radius:50%;background:' + col + ';flex-shrink:0"></span>'
-        + '<div><div style="font-weight:600;color:var(--text);">' + t.name + ' <span style="font-family:var(--mono);font-weight:400;color:var(--text3);">' + mi + ' mi</span></div>'
-        + '<div style="font-size:12px;color:var(--text3);">' + stores + '</div></div></div>';
-    }).join('');
-
-    var rightRows = SYS_ROUTES.map(function(sr, i) {
-      var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-      var stores = sr.stops.map(function(s){ return s.store; }).join(' + ');
-      var mi = sysRouteMiles[sr.num];
-      var matched = !!sysToUserTruck[sr.num];
-      return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid var(--border);font-size:13px;">'
-        + '<span style="width:8px;height:8px;border-radius:50%;background:' + col + ';flex-shrink:0"></span>'
-        + '<div><div style="font-weight:600;color:var(--text);">Rt.' + sr.num
-          + ' <span style="font-family:var(--mono);font-weight:400;color:var(--text3);">' + mi + ' mi</span>'
-          + (matched ? ' <span style="font-size:11px;color:var(--green);">✓</span>' : ' <span style="font-size:11px;color:#fca5a5;">✗</span>') + '</div>'
-        + '<div style="font-size:12px;color:var(--text3);">' + stores + '</div></div></div>';
-    }).join('');
-
-    html += '<div style="margin-top:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
-      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:8px;">📐 Miles Reconciliation</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
-      + '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding-bottom:4px;">Your Routes — ' + r.yourMiles + ' mi</div>' + leftRows + '</div>'
-      + '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding-bottom:4px;">System Routes — ' + r.optimalMiles + ' mi</div>' + rightRows + '</div>'
-      + '</div>'
-      + '<div style="display:flex;justify-content:space-between;padding:8px 0 0;border-top:2px solid var(--border2);margin-top:8px;font-weight:700;">'
-      + '<span>Total gap vs optimal</span>'
-      + '<span style="font-family:var(--mono);color:' + (totalGap > 0 ? '#fca5a5' : totalGap < 0 ? 'var(--green)' : 'var(--text3)') + '">'
-      + (totalGap > 0 ? '+' : '') + totalGap + ' mi</span>'
-      + '</div></div>';
-  }
-
-  diffEl.innerHTML = '<div class="diff-header">\ud83d\udcca Route Comparison</div>' + html;
-
-  var aiBody = document.getElementById('analysis-ai-body');
-  var yourMi = r.yourMiles || 0, optMi = r.optimalMiles || 0;
-  var eff = optMi && yourMi ? Math.round((optMi/yourMi)*100) : null;
-  var notes = [];
-  if (eff !== null) {
-    if (eff > 100) {
-      notes.push('Miles efficiency: ' + eff + '% — you drove fewer miles than the reference solution. Check the window compliance score to ensure your groupings can be served within delivery windows.');
-    } else if (eff >= 95) {
-      notes.push('Miles efficiency: ' + eff + '% — very close to optimal.');
-    } else if (eff >= 80) {
-      notes.push('Miles efficiency: ' + eff + '%. A few groupings added extra distance.');
-    } else {
-      notes.push('Miles efficiency: ' + eff + '%. Look for stores that ended up far from their natural delivery cluster.');
-    }
-  }
-  if (r.sb.window) {
-    const wp = r.sb.window.windowPct;
-    const viols = r.sb.window.windowViolations;
-    if (viols === 0) {
-      notes.push('Window compliance: 100% — all trucks can serve their stops within delivery windows.');
-    } else {
-      notes.push('Window compliance: ' + wp + '%. ' + viols + ' store' + (viols!==1?'s':'') + ' cannot be reached within their delivery window given the other stops on that truck. Check the 🔴 trucks and consider splitting those stores onto separate trucks.');
-    }
-  }
-  if (r.sb.routematch) {
-    const mp = r.sb.routematch.matchPct;
-    if (mp < 100) {
-      var unmatchedTrucks = activeTrucks.filter(function(t){ return !findMatchingGroup(t); });
-      var diffStores = Array.from(new Set(unmatchedTrucks.reduce(function(a,t){
-        return a.concat(t.orders.map(function(o){ return o.storeName; }));
-      }, [])));
-      notes.push('Your groupings differ from the system on: ' + (diffStores.join(', ') || 'none') + '. The system\'s approach is shown in the comparison below — both may be valid if windows are met.');
-    }
-  }
-  if (r.numTrucks > SYS_ROUTES.length) {
-    notes.push('You used ' + (r.numTrucks - SYS_ROUTES.length) + ' more truck' + (r.numTrucks - SYS_ROUTES.length !== 1 ? 's' : '') + ' than the reference solution.');
-  }
-  aiBody.textContent = notes.join('\n\n');
 }
 
-let resultsMapUser = null, resultsMapSystem = null;
-
-function initResultsMap(finalGeos, sysGeoMap) {
-  _drawUserMap(finalGeos, trucks.filter(t=>t.orders.length>0));
-  _drawSystemMap(sysGeoMap);
+// ═══════════════════════════════════════════════════════════════
+// RESULTS MAPS
+// ═══════════════════════════════════════════════════════════════
+function initResultsMap(finalGeos,sysGeoMap){_drawUserMap(finalGeos);_drawSystemMap(sysGeoMap);}
+function _drawUserMap(finalGeos){
+  if(resultsMapUser){resultsMapUser.remove();resultsMapUser=null;}
+  resultsMapUser=L.map('results-map-user',{center:[38.05,-122.2],zoom:8,scrollWheelZoom:false,zoomControl:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(resultsMapUser);
+  L.marker([DEPOT.lat,DEPOT.lng],{icon:L.divIcon({html:'<div style="background:#1e293b;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(255,255,255,0.15)">🏭</div>',iconSize:[22,22],iconAnchor:[11,11],className:''})}).addTo(resultsMapUser);
+  const colors={};const activeTrucks=trucks.filter(t=>t.orders.length>0);
+  activeTrucks.forEach((t,i)=>{const c=TRUCK_COLORS[i%TRUCK_COLORS.length];getUniqueStores(t.orders).forEach(id=>colors[id]=c);});
+  Object.entries(STORE_COORDS).forEach(([id,c])=>{const col=colors[id]||'#3a4a5c';L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:colors[id]?500:200}).addTo(resultsMapUser).bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});});
+  const bounds=[[DEPOT.lat,DEPOT.lng]];
+  Object.values(finalGeos).forEach(item=>{L.polyline(item.lls,{color:item.color,weight:3.5,opacity:0.88,lineJoin:'round',lineCap:'round'}).addTo(resultsMapUser);if(item.lls)item.lls.forEach(ll=>bounds.push(ll));});
+  const leg=document.getElementById('legend-user');if(leg)leg.innerHTML=activeTrucks.map((t,i)=>`<span style="display:flex;align-items:center;gap:4px;color:var(--text2);"><span style="width:10px;height:10px;border-radius:50%;background:${TRUCK_COLORS[i%TRUCK_COLORS.length]};flex-shrink:0;"></span>${t.name}: ${optimizeStopOrder(getUniqueStores(t.orders)).map(id=>STORE_ABBR[id]).join('→')}</span>`).join('');
+  try{resultsMapUser.fitBounds(bounds,{padding:[28,28]});}catch(e){}
 }
-
-function _drawUserMap(finalGeos, activeTrucks) {
-  if (resultsMapUser) { resultsMapUser.remove(); resultsMapUser = null; }
-  resultsMapUser = L.map('results-map-user', { center:[38.05,-122.2], zoom:8, scrollWheelZoom:false, zoomControl:true });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-    attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
-  }).addTo(resultsMapUser);
-  L.marker([DEPOT.lat,DEPOT.lng],{ icon:L.divIcon({ html:'<div style="background:#1e293b;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(255,255,255,0.15)">🏭</div>', iconSize:[22,22], iconAnchor:[11,11], className:'' }) }).addTo(resultsMapUser);
-  var storeColors = {};
-  activeTrucks.forEach(function(t,i) {
-    var c = TRUCK_COLORS[i%TRUCK_COLORS.length];
-    getUniqueStores(t.orders).forEach(function(id){ storeColors[id] = c; });
-  });
-  Object.entries(STORE_COORDS).forEach(function(entry) {
-    var id = entry[0], c = entry[1];
-    var col = storeColors[id] || '#3a4a5c';
-    L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:storeColors[id]?500:200}).addTo(resultsMapUser)
-      .bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});
-  });
-  var bounds = [[DEPOT.lat,DEPOT.lng]];
-  Object.values(finalGeos).forEach(function(item) {
-    var lls=item.lls, color=item.color;
-    L.polyline(lls,{color:color,weight:3.5,opacity:0.88,lineJoin:'round',lineCap:'round'}).addTo(resultsMapUser);
-    if (lls) lls.forEach(function(ll){ bounds.push(ll); });
-  });
-  var legendEl = document.getElementById('legend-user');
-  if (legendEl) {
-    legendEl.innerHTML = activeTrucks.map(function(t,i){
-      var col = TRUCK_COLORS[i%TRUCK_COLORS.length];
-      var stores = optimizeStopOrder(getUniqueStores(t.orders)).map(function(id){return STORE_ABBR[id];}).join('→');
-      return '<span style="display:flex;align-items:center;gap:4px;color:var(--text2);">'
-        +'<span style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>'
-        +t.name+': '+stores+'</span>';
-    }).join('');
-  }
-  try { resultsMapUser.fitBounds(bounds,{padding:[28,28]}); } catch(e) {}
-}
-
-function _drawSystemMap(sysGeoMap) {
-  if (resultsMapSystem) { resultsMapSystem.remove(); resultsMapSystem = null; }
-  resultsMapSystem = L.map('results-map-system', { center:[38.05,-122.2], zoom:8, scrollWheelZoom:false, zoomControl:true });
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-    attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
-  }).addTo(resultsMapSystem);
-  L.marker([DEPOT.lat,DEPOT.lng],{ icon:L.divIcon({ html:'<div style="background:#1e293b;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(255,255,255,0.15)">🏭</div>', iconSize:[22,22], iconAnchor:[11,11], className:'' }) }).addTo(resultsMapSystem);
-  var bounds = [[DEPOT.lat,DEPOT.lng]];
-  SYS_ROUTES.forEach(function(sr, i) {
-    var col = TRUCK_COLORS[i % TRUCK_COLORS.length];
-    var storeIds = sr.stops.map(function(s){return STOP_NAME_TO_ID[s.store];}).filter(Boolean);
-    var ordered = optimizeStopOrder(storeIds);
-    var lls = [[DEPOT.lat,DEPOT.lng]].concat(ordered.map(function(id){return [STORE_COORDS[id].lat,STORE_COORDS[id].lng];}));
-    ordered.forEach(function(id) {
-      var c = STORE_COORDS[id];
-      L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:500}).addTo(resultsMapSystem)
-        .bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});
-      bounds.push([c.lat,c.lng]);
-    });
-    L.polyline(lls,{color:col,weight:3.5,opacity:0.9,lineJoin:'round',lineCap:'round'}).addTo(resultsMapSystem);
-  });
-  var legendEl = document.getElementById('legend-system');
-  if (legendEl) {
-    legendEl.innerHTML = SYS_ROUTES.map(function(sr, i){
-      var col = TRUCK_COLORS[i%TRUCK_COLORS.length];
-      var abbrs = sr.stops.map(function(s){return STORE_ABBR[STOP_NAME_TO_ID[s.store]]||s.store.substring(0,3);}).join('→');
-      return '<span style="display:flex;align-items:center;gap:4px;color:var(--text2);">'
-        +'<span style="width:10px;height:10px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>'
-        +'Rt.'+sr.num+': '+abbrs+'</span>';
-    }).join('');
-  }
-  try { resultsMapSystem.fitBounds(bounds,{padding:[28,28]}); } catch(e) {}
+function _drawSystemMap(sysGeoMap){
+  if(resultsMapSystem){resultsMapSystem.remove();resultsMapSystem=null;}
+  resultsMapSystem=L.map('results-map-system',{center:[38.05,-122.2],zoom:8,scrollWheelZoom:false,zoomControl:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(resultsMapSystem);
+  L.marker([DEPOT.lat,DEPOT.lng],{icon:L.divIcon({html:'<div style="background:#1e293b;width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid rgba(255,255,255,0.15)">🏭</div>',iconSize:[22,22],iconAnchor:[11,11],className:''})}).addTo(resultsMapSystem);
+  const bounds=[[DEPOT.lat,DEPOT.lng]];
+  SYS_ROUTES.forEach((sr,i)=>{const col=TRUCK_COLORS[i%TRUCK_COLORS.length],ids=sr.stops.map(s=>STOP_NAME_TO_ID[s.store]).filter(Boolean),ord=optimizeStopOrder(ids),lls=[[DEPOT.lat,DEPOT.lng],...ord.map(id=>[STORE_COORDS[id].lat,STORE_COORDS[id].lng])];ord.forEach(id=>{const c=STORE_COORDS[id];L.marker([c.lat,c.lng],{icon:makeStoreIcon(STORE_ABBR[id],col),zIndexOffset:500}).addTo(resultsMapSystem).bindTooltip(STORE_NAMES[id],{permanent:false,direction:'top',offset:[0,-16],className:'store-tt'});bounds.push([c.lat,c.lng]);});L.polyline(lls,{color:col,weight:3.5,opacity:0.9,lineJoin:'round',lineCap:'round'}).addTo(resultsMapSystem);});
+  const leg=document.getElementById('legend-system');if(leg)leg.innerHTML=SYS_ROUTES.map((sr,i)=>`<span style="display:flex;align-items:center;gap:4px;color:var(--text2);"><span style="width:10px;height:10px;border-radius:50%;background:${TRUCK_COLORS[i%TRUCK_COLORS.length]};flex-shrink:0;"></span>Rt.${sr.num}: ${sr.stops.map(s=>STORE_ABBR[STOP_NAME_TO_ID[s.store]]||s.store.substring(0,3)).join('→')}</span>`).join('');
+  try{resultsMapSystem.fitBounds(bounds,{padding:[28,28]});}catch(e){}
 }
 
 // ═══════════════════════════════════════════════════════════════
 // CONTEXT MENU
 // ═══════════════════════════════════════════════════════════════
-let ctxOrder = null, ctxSourceTid = null;
-
-function openCtx(e, order, sourceTid) {
-  ctxOrder = order;
-  ctxSourceTid = sourceTid;
-
-  const menu = document.getElementById('ctx-menu');
-  menu.innerHTML = '';
-
-  const title = document.createElement('div');
-  title.className = 'ctx-title';
-  title.textContent = order.storeName + ' · ' + Math.round(order.weight).toLocaleString() + ' lbs';
-  menu.appendChild(title);
-
-  const div1 = document.createElement('div'); div1.className = 'ctx-divider'; menu.appendChild(div1);
-
-  if (trucks.length) {
-    trucks.forEach(t => {
-      if (sourceTid === t.id) return;
-      const curW = t.orders.reduce((s,o)=>s+o.weight,0);
-      const wouldExceed = curW + order.weight > CAP.weight;
-      const item = document.createElement('div');
-      item.className = 'ctx-item' + (wouldExceed ? ' disabled' : '');
-      const idx = trucks.indexOf(t);
-      const color = TRUCK_COLORS[idx % TRUCK_COLORS.length];
-      const remaining = Math.round(CAP.weight - curW).toLocaleString();
-      item.innerHTML = `<span class="ctx-icon">🚛</span><span style="flex:1">Move to ${t.name}</span><span style="font-size:13px;color:${wouldExceed?'#fca5a5':'var(--text3)'};">${wouldExceed?'⚠ over':remaining+' lbs left'}</span>`;
-      item.style.borderLeft = `3px solid ${color}`;
-      item.style.paddingLeft = '8px';
-      if (!wouldExceed) item.addEventListener('click', () => { ctxMoveToTruck(t.id); closeCtx(); });
+let ctxOrder=null,ctxSourceTid=null;
+function openCtx(e,order,sourceTid){
+  ctxOrder=order;ctxSourceTid=sourceTid;
+  const menu=document.getElementById('ctx-menu');menu.innerHTML='';
+  const title=document.createElement('div');title.className='ctx-title';title.textContent=order.storeName+' · '+Math.round(order.weight).toLocaleString()+' lbs';menu.appendChild(title);
+  const d1=document.createElement('div');d1.className='ctx-divider';menu.appendChild(d1);
+  if(trucks.length){
+    trucks.forEach(t=>{
+      if(sourceTid===t.id)return;
+      const curW=t.orders.reduce((s,o)=>s+o.weight,0),over=curW+order.weight>CAP.weight;
+      const item=document.createElement('div');item.className='ctx-item'+(over?' disabled':'');
+      const col=TRUCK_COLORS[trucks.indexOf(t)%TRUCK_COLORS.length],rem=Math.round(CAP.weight-curW).toLocaleString();
+      item.innerHTML=`<span class="ctx-icon">🚛</span><span style="flex:1">Move to ${t.name}</span><span style="font-size:13px;color:${over?'#fca5a5':'var(--text3)'};">${over?'⚠ over':rem+' lbs left'}</span>`;
+      item.style.borderLeft=`3px solid ${col}`;item.style.paddingLeft='8px';
+      if(!over)item.addEventListener('click',()=>{ctxMoveToTruck(t.id);closeCtx();});
       menu.appendChild(item);
     });
-    const div2 = document.createElement('div'); div2.className = 'ctx-divider'; menu.appendChild(div2);
+    const d2=document.createElement('div');d2.className='ctx-divider';menu.appendChild(d2);
   } else {
-    const none = document.createElement('div');
-    none.className = 'ctx-item disabled';
-    none.innerHTML = '<span class="ctx-icon">🚛</span>No trucks yet — add one first';
-    menu.appendChild(none);
-    const div2 = document.createElement('div'); div2.className = 'ctx-divider'; menu.appendChild(div2);
+    const none=document.createElement('div');none.className='ctx-item disabled';none.innerHTML='<span class="ctx-icon">🚛</span>No trucks yet — add one first';menu.appendChild(none);
+    const d2=document.createElement('div');d2.className='ctx-divider';menu.appendChild(d2);
   }
-
-  if (sourceTid !== null) {
-    const ret = document.createElement('div');
-    ret.className = 'ctx-item danger';
-    ret.innerHTML = '<span class="ctx-icon">↩</span>Return to pool';
-    ret.addEventListener('click', () => { ctxReturnToPool(); closeCtx(); });
-    menu.appendChild(ret);
-  }
-
+  if(sourceTid!==null){const ret=document.createElement('div');ret.className='ctx-item danger';ret.innerHTML='<span class="ctx-icon">↩</span>Return to pool';ret.addEventListener('click',()=>{ctxReturnToPool();closeCtx();});menu.appendChild(ret);}
   menu.classList.add('open');
-  window._ctxOpenTime = Date.now(); // ghost-click guard
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const mw = menu.offsetWidth, mh = menu.offsetHeight;
-  let x = e.clientX + 4, y = e.clientY + 4;
-  if (x + mw > vw - 8) x = e.clientX - mw - 4;
-  if (y + mh > vh - 8) y = e.clientY - mh - 4;
-  menu.style.left = x + 'px';
-  menu.style.top  = y + 'px';
+  window._ctxOpenTime=Date.now();
+  const vw=window.innerWidth,vh=window.innerHeight,mw=menu.offsetWidth,mh=menu.offsetHeight;
+  let x=e.clientX+4,y=e.clientY+4;
+  if(x+mw>vw-8)x=e.clientX-mw-4;if(y+mh>vh-8)y=e.clientY-mh-4;
+  menu.style.left=x+'px';menu.style.top=y+'px';
 }
-
-function closeCtx() {
-  const menu = document.getElementById('ctx-menu');
-  if (menu) menu.classList.remove('open');
-  ctxOrder = null; ctxSourceTid = null;
+function closeCtx(){const m=document.getElementById('ctx-menu');if(m)m.classList.remove('open');ctxOrder=null;ctxSourceTid=null;}
+function ctxMoveToTruck(tid){
+  if(!ctxOrder)return;
+  if(ctxSourceTid===null){poolOrders=poolOrders.filter(o=>o.id!==ctxOrder.id);}else{const s=trucks.find(t=>t.id===ctxSourceTid);if(s)s.orders=s.orders.filter(o=>o.id!==ctxOrder.id);}
+  const dest=trucks.find(t=>t.id===tid);if(dest)dest.orders.push(ctxOrder);
+  renderAll();updateMarkerColors();scheduleRouteUpdate(tid);if(ctxSourceTid)scheduleRouteUpdate(ctxSourceTid);updateMilesOverlay();
 }
-
-function ctxMoveToTruck(tid) {
-  if (!ctxOrder) return;
-  if (ctxSourceTid === null) {
-    poolOrders = poolOrders.filter(o => o.id !== ctxOrder.id);
-  } else {
-    const src = trucks.find(t => t.id === ctxSourceTid);
-    if (src) src.orders = src.orders.filter(o => o.id !== ctxOrder.id);
-  }
-  const dest = trucks.find(t => t.id === tid);
-  if (dest) dest.orders.push(ctxOrder);
-  renderAll(); updateMarkerColors();
-  scheduleRouteUpdate(tid);
-  if (ctxSourceTid) scheduleRouteUpdate(ctxSourceTid);
-  updateMilesOverlay();
+function ctxReturnToPool(){
+  if(!ctxOrder||ctxSourceTid===null)return;
+  const s=trucks.find(t=>t.id===ctxSourceTid);if(s)s.orders=s.orders.filter(o=>o.id!==ctxOrder.id);
+  poolOrders.push(ctxOrder);renderAll();updateMarkerColors();scheduleRouteUpdate(ctxSourceTid);updateMilesOverlay();
 }
-
-function ctxReturnToPool() {
-  if (!ctxOrder || ctxSourceTid === null) return;
-  const src = trucks.find(t => t.id === ctxSourceTid);
-  if (src) src.orders = src.orders.filter(o => o.id !== ctxOrder.id);
-  poolOrders.push(ctxOrder);
-  renderAll(); updateMarkerColors();
-  scheduleRouteUpdate(ctxSourceTid);
-  updateMilesOverlay();
-}
-
-document.addEventListener('click', e => {
-  if (Date.now() - (window._ctxOpenTime || 0) < 400) return; // ghost-click guard
-  const menu = document.getElementById('ctx-menu');
-  if (menu && !menu.contains(e.target)) closeCtx();
+document.addEventListener('click',e=>{
+  if(Date.now()-(window._ctxOpenTime||0)<400)return;
+  const m=document.getElementById('ctx-menu');if(m&&!m.contains(e.target))closeCtx();
 });
 
-function showToast(msg) {
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),4000);
-}
-
-document.getElementById('player-name-input').addEventListener('keydown', e => { if(e.key==='Enter') startGame(); });
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
 
 // ═══════════════════════════════════════════════════════════════
-// TOUCH DRAG AND DROP — ANDROID FIX v2
-//
-// Three bugs fixed:
-// 1. Slow tap (>400ms hold, no movement): longPressTriggered path used to just
-//    reset state and show nothing. Now falls through to open the sheet.
-// 2. Sheet condition was innerWidth<=600 only, missing landscape phones (>600px).
-//    Now opens on any touch device regardless of width.
-// 3. Cross-panel drag blocked by `touch-action:pan-y` on scrollable panels.
-//    On long-press fire we set touch-action:none so the finger can drag anywhere.
+// TOUCH DRAG AND DROP
 // ═══════════════════════════════════════════════════════════════
-(function() {
+(function(){
   'use strict';
-  var ghost = document.getElementById('touch-drag-ghost');
-  var touchDragOrder  = null;
-  var touchDragSource = null;
-  var longPressTimer  = null;
-  var longPressTriggered = false; // 400ms timer fired, ghost visible
-  var isDraggingTouch    = false; // finger moved after long-press, drag committed
-  var lastDropTarget  = null;
-  var touchStartX = 0, touchStartY = 0;
-  var lastTouchX  = 0, lastTouchY  = 0;
-  var activeTapChip = null; // chip element that was tapped
+  var ghost=document.getElementById('touch-drag-ghost');
+  var touchDragOrder=null,touchDragSource=null,longPressTimer=null;
+  var longPressTriggered=false,isDraggingTouch=false,lastDropTarget=null;
+  var touchStartX=0,touchStartY=0,lastTouchX=0,lastTouchY=0,activeTapChip=null;
 
-  function getOrderFromEl(el) {
-    var chip = el.closest('.order-chip, .order-row');
-    if (!chip) return null;
-    var id = chip.dataset.id;
-    var o = poolOrders.find(function(x){ return x.id === id; });
-    if (!o) {
-      trucks.forEach(function(t) {
-        var found = t.orders.find(function(x){ return x.id === id; });
-        if (found) o = found;
-      });
+  function getOrderFromEl(el){var chip=el.closest('.order-chip,.order-row');if(!chip)return null;var id=chip.dataset.id,o=poolOrders.find(x=>x.id===id);if(!o)trucks.forEach(t=>{var f=t.orders.find(x=>x.id===id);if(f)o=f;});return o||null;}
+  function getSourceFromEl(el){var chip=el.closest('.order-chip,.order-row');if(!chip)return null;if(chip.classList.contains('order-chip'))return'pool';var dz=chip.closest('.drop-zone');if(dz&&dz.dataset.tid)return'truck_'+dz.dataset.tid;return null;}
+  function showGhost(label,x,y){ghost.textContent=label;ghost.style.display='block';moveGhost(x,y);}
+  function moveGhost(x,y){ghost.style.left=(x-ghost.offsetWidth/2)+'px';ghost.style.top=(y-48)+'px';}
+  function hideGhost(){ghost.style.display='none';}
+  function highlightTarget(el){if(lastDropTarget&&lastDropTarget!==el)lastDropTarget.classList.remove('drag-over');if(el)el.classList.add('drag-over');lastDropTarget=el;}
+  function clearHighlight(){if(lastDropTarget){lastDropTarget.classList.remove('drag-over');lastDropTarget=null;}}
+  function getDropTarget(x,y){ghost.style.display='none';var el=document.elementFromPoint(x,y);ghost.style.display='block';if(!el)return null;var dz=el.closest('.drop-zone');if(dz)return{type:'truck',tid:parseInt(dz.dataset.tid),el:dz};var pool=el.closest('#order-pool,.orders-panel');if(pool)return{type:'pool',el:pool};return null;}
+  function resetTouchState(){
+    clearTimeout(longPressTimer);longPressTimer=null;longPressTriggered=false;isDraggingTouch=false;
+    touchDragOrder=null;touchDragSource=null;draggedOrder=null;dragSource=null;
+    window._touchLongPressActive=false;
+    clearHighlight();hideGhost();
+    document.querySelectorAll('.orders-panel,.trucks-panel').forEach(p=>p.style.touchAction='');
+    document.querySelectorAll('.order-chip.dragging,.order-row.dragging').forEach(el=>el.classList.remove('dragging'));
+  }
+
+  document.addEventListener('touchstart',function(e){
+    var chip=e.target.closest('.order-chip,.order-row');if(!chip)return;
+    var touch=e.touches[0];touchStartX=lastTouchX=touch.clientX;touchStartY=lastTouchY=touch.clientY;activeTapChip=chip;
+    longPressTimer=setTimeout(function(){
+      var o=getOrderFromEl(chip),src=getSourceFromEl(chip);if(!o||!src)return;
+      longPressTriggered=true;window._touchLongPressActive=true;
+      touchDragOrder=o;touchDragSource=src;draggedOrder=o;dragSource=src;
+      document.querySelectorAll('.orders-panel,.trucks-panel').forEach(p=>p.style.touchAction='none');
+      showGhost(o.storeName+' · '+Math.round(o.weight).toLocaleString()+' lbs',lastTouchX,lastTouchY);
+      if(navigator.vibrate)navigator.vibrate(40);
+    },400);
+  },{passive:true});
+
+  document.addEventListener('touchmove',function(e){
+    var t=e.touches[0];lastTouchX=t.clientX;lastTouchY=t.clientY;
+    var dx=Math.abs(t.clientX-touchStartX),dy=Math.abs(t.clientY-touchStartY);
+    if(!longPressTriggered){if(dx>12||dy>12){clearTimeout(longPressTimer);longPressTimer=null;activeTapChip=null;}return;}
+    if(!isDraggingTouch&&(dx>8||dy>8)){isDraggingTouch=true;var ce=document.querySelector('.order-chip[data-id="'+touchDragOrder.id+'"],.order-row[data-id="'+touchDragOrder.id+'"]');if(ce)ce.classList.add('dragging');}
+    if(isDraggingTouch){e.preventDefault();moveGhost(t.clientX,t.clientY);highlightTarget((getDropTarget(t.clientX,t.clientY)||{}).el||null);}
+  },{passive:false});
+
+  document.addEventListener('touchend',function(e){
+    clearTimeout(longPressTimer);longPressTimer=null;
+    var touch=e.changedTouches[0],dx=Math.abs(touch.clientX-touchStartX),dy=Math.abs(touch.clientY-touchStartY);
+    if(isDraggingTouch){
+      var target=getDropTarget(touch.clientX,touch.clientY);clearHighlight();hideGhost();
+      document.querySelectorAll('.order-chip.dragging,.order-row.dragging').forEach(el=>el.classList.remove('dragging'));
+      if(target&&touchDragOrder){if(target.type==='truck'&&'truck_'+target.tid!==touchDragSource){draggedOrder=touchDragOrder;dragSource=touchDragSource;dropToTruck({preventDefault:function(){},currentTarget:target.el},target.tid);}else if(target.type==='pool'&&touchDragSource!=='pool'){draggedOrder=touchDragOrder;dragSource=touchDragSource;dropToPool({preventDefault:function(){}});}}
+      resetTouchState();activeTapChip=null;return;
     }
-    return o || null;
-  }
+    var chipForTap=activeTapChip;
+    var orderForTap=longPressTriggered?touchDragOrder:(chipForTap?getOrderFromEl(chipForTap):null);
+    var sourceForTap=longPressTriggered?touchDragSource:(chipForTap?getSourceFromEl(chipForTap):null);
+    resetTouchState();activeTapChip=null;
+    if(orderForTap&&dx<15&&dy<15){var tid=(sourceForTap&&sourceForTap.startsWith('truck_'))?parseInt(sourceForTap.replace('truck_','')):null;openCtx({clientX:touch.clientX,clientY:touch.clientY,preventDefault:function(){}},orderForTap,tid);}
+  },{passive:true});
 
-  function getSourceFromEl(el) {
-    var chip = el.closest('.order-chip, .order-row');
-    if (!chip) return null;
-    if (chip.classList.contains('order-chip')) return 'pool';
-    var dz = chip.closest('.drop-zone');
-    if (dz && dz.dataset.tid) return 'truck_' + dz.dataset.tid;
-    return null;
-  }
-
-  function showGhost(label, x, y) {
-    ghost.textContent = label;
-    ghost.style.display = 'block';
-    moveGhost(x, y);
-  }
-
-  function moveGhost(x, y) {
-    ghost.style.left = (x - ghost.offsetWidth / 2) + 'px';
-    ghost.style.top  = (y - 48) + 'px';
-  }
-
-  function hideGhost() { ghost.style.display = 'none'; }
-
-  function highlightTarget(el) {
-    if (lastDropTarget && lastDropTarget !== el) lastDropTarget.classList.remove('drag-over');
-    if (el) el.classList.add('drag-over');
-    lastDropTarget = el;
-  }
-
-  function clearHighlight() {
-    if (lastDropTarget) { lastDropTarget.classList.remove('drag-over'); lastDropTarget = null; }
-  }
-
-  function getDropTarget(x, y) {
-    ghost.style.display = 'none';
-    var el = document.elementFromPoint(x, y);
-    ghost.style.display = 'block';
-    if (!el) return null;
-    var dz = el.closest('.drop-zone');
-    if (dz) return { type: 'truck', tid: parseInt(dz.dataset.tid), el: dz };
-    var pool = el.closest('#order-pool, .orders-panel');
-    if (pool) return { type: 'pool', el: pool };
-    return null;
-  }
-
-  function resetTouchState() {
-    clearTimeout(longPressTimer);
-    longPressTimer     = null;
-    longPressTriggered = false;
-    isDraggingTouch    = false;
-    touchDragOrder     = null;
-    touchDragSource    = null;
-    draggedOrder       = null;
-    dragSource         = null;
-    window._touchLongPressActive = false;
-    clearHighlight();
-    hideGhost();
-    // Restore panel scrolling that was locked for drag
-    document.querySelectorAll('.orders-panel, .trucks-panel').forEach(function(p) {
-      p.style.touchAction = '';
-    });
-    document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
-      .forEach(function(el){ el.classList.remove('dragging'); });
-  }
-
-  // ── touchstart ──
-  document.addEventListener('touchstart', function(e) {
-    var chip = e.target.closest('.order-chip, .order-row');
-    if (!chip) return;
-
-    var touch = e.touches[0];
-    touchStartX = lastTouchX = touch.clientX;
-    touchStartY = lastTouchY = touch.clientY;
-    activeTapChip = chip;
-
-    longPressTimer = setTimeout(function() {
-      var o   = getOrderFromEl(chip);
-      var src = getSourceFromEl(chip);
-      if (!o || !src) return;
-      longPressTriggered = true;
-      window._touchLongPressActive = true;
-      touchDragOrder  = o;
-      touchDragSource = src;
-      draggedOrder    = o;
-      dragSource      = src;
-      // FIX 3: lock touch-action so finger can drag across panels in any direction
-      document.querySelectorAll('.orders-panel, .trucks-panel').forEach(function(p) {
-        p.style.touchAction = 'none';
-      });
-      showGhost(
-        o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs',
-        lastTouchX, lastTouchY
-      );
-      if (navigator.vibrate) navigator.vibrate(40);
-    }, 400);
-  }, { passive: true });
-
-  // ── touchmove ──
-  document.addEventListener('touchmove', function(e) {
-    var t  = e.touches[0];
-    lastTouchX = t.clientX;
-    lastTouchY = t.clientY;
-    var dx = Math.abs(t.clientX - touchStartX);
-    var dy = Math.abs(t.clientY - touchStartY);
-
-    if (!longPressTriggered) {
-      // Cancel long-press if user scrolls (>12px movement)
-      if (dx > 12 || dy > 12) {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-        activeTapChip  = null; // moved too much — not a tap
-      }
-      return; // let browser scroll
-    }
-
-    // Long-press fired. Commit drag when finger moves >8px.
-    if (!isDraggingTouch && (dx > 8 || dy > 8)) {
-      isDraggingTouch = true;
-      var chipEl = document.querySelector(
-        '.order-chip[data-id="' + touchDragOrder.id + '"],' +
-        '.order-row[data-id="' + touchDragOrder.id + '"]'
-      );
-      if (chipEl) chipEl.classList.add('dragging');
-    }
-
-    if (isDraggingTouch) {
-      e.preventDefault(); // block scroll during committed drag
-      moveGhost(t.clientX, t.clientY);
-      var target = getDropTarget(t.clientX, t.clientY);
-      highlightTarget(target ? target.el : null);
-    }
-    // Ghost visible but drag not yet committed — don't block scroll
-  }, { passive: false });
-
-  // ── touchend ──
-  document.addEventListener('touchend', function(e) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-
-    var touch = e.changedTouches[0];
-    var dx = Math.abs(touch.clientX - touchStartX);
-    var dy = Math.abs(touch.clientY - touchStartY);
-
-    // ── Drop path: drag was committed ──
-    if (isDraggingTouch) {
-      var target = getDropTarget(touch.clientX, touch.clientY);
-      clearHighlight();
-      hideGhost();
-      document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
-        .forEach(function(el){ el.classList.remove('dragging'); });
-
-      if (target && touchDragOrder) {
-        if (target.type === 'truck' && 'truck_' + target.tid !== touchDragSource) {
-          draggedOrder = touchDragOrder;
-          dragSource   = touchDragSource;
-          dropToTruck({ preventDefault: function(){}, currentTarget: target.el }, target.tid);
-        } else if (target.type === 'pool' && touchDragSource !== 'pool') {
-          draggedOrder = touchDragOrder;
-          dragSource   = touchDragSource;
-          dropToPool({ preventDefault: function(){} });
-        }
-      }
-
-      resetTouchState();
-      activeTapChip = null;
-      return;
-    }
-
-    // ── Tap path (fast tap OR slow tap / long-press with no drag) ──
-    // FIX 1: longPressTriggered path used to just resetTouchState() and return,
-    // silently discarding the tap. Now we fall through and open the sheet.
-    var chipForTap = activeTapChip;
-    var orderForTap  = longPressTriggered ? touchDragOrder  : (chipForTap ? getOrderFromEl(chipForTap)  : null);
-    var sourceForTap = longPressTriggered ? touchDragSource : (chipForTap ? getSourceFromEl(chipForTap) : null);
-
-    resetTouchState(); // clean up before opening sheet (avoids state bleed)
-    activeTapChip = null;
-
-    if (orderForTap && dx < 15 && dy < 15) {
-      var tid = (sourceForTap && sourceForTap.startsWith('truck_'))
-        ? parseInt(sourceForTap.replace('truck_', ''))
-        : null;
-      openCtx(
-        { clientX: touch.clientX, clientY: touch.clientY, preventDefault: function(){} },
-        orderForTap, tid
-      );
-    }
-  }, { passive: true });
-
-  // ── touchcancel ──
-  document.addEventListener('touchcancel', function() {
-    resetTouchState();
-    activeTapChip = null;
-  }, { passive: true });
-
+  document.addEventListener('touchcancel',function(){resetTouchState();activeTapChip=null;},{passive:true});
 })();
-
 
 // ═══════════════════════════════════════════════════════════════
 // MOBILE ENHANCEMENTS
 // ═══════════════════════════════════════════════════════════════
+if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(function(){});
 
-if (screen.orientation && screen.orientation.lock) {
-  screen.orientation.lock('landscape').catch(function(){});
+var gameActive=false,_backGuardShowing=false;
+var _isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+
+function setGameActive(val){
+  gameActive=val;
+  if(val){if(_isIOS){history.replaceState({page:'game'},'','#game');for(var i=0;i<5;i++)history.pushState({page:'game',depth:i},'','#game');}else{for(var i=0;i<20;i++)history.pushState({page:'game',depth:i},'');}}
 }
+function _refillStack(){if(_isIOS){for(var i=0;i<5;i++)history.pushState({page:'game',depth:i},'','#game');}else{for(var i=0;i<20;i++)history.pushState({page:'game',depth:i},'');}}
+window.addEventListener('pageshow',function(e){if(e.persisted&&gameActive){document.getElementById('back-guard-overlay').style.display='flex';_backGuardShowing=true;_refillStack();}});
+function backGuardCancel(){_refillStack();document.getElementById('back-guard-overlay').style.display='none';_backGuardShowing=false;}
+function backGuardLeave(){gameActive=false;_backGuardShowing=false;document.getElementById('back-guard-overlay').style.display='none';showScreen('screen-intro');}
+window.addEventListener('popstate',function(){if(!gameActive)return;_refillStack();if(_backGuardShowing)return;_backGuardShowing=true;document.getElementById('back-guard-overlay').style.display='flex';});
+window.addEventListener('beforeunload',function(e){if(gameActive){e.preventDefault();e.returnValue='';}});
 
-var gameActive = false;
-var _backGuardShowing = false;
-var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-function setGameActive(val) {
-  gameActive = val;
-  if (val) {
-    if (_isIOS) {
-      history.replaceState({ page: 'game' }, '', '#game');
-      for (var i = 0; i < 5; i++) {
-        history.pushState({ page: 'game', depth: i }, '', '#game');
-      }
-    } else {
-      for (var i = 0; i < 20; i++) {
-        history.pushState({ page: 'game', depth: i }, '');
-      }
-    }
-  }
-}
-
-function _refillStack() {
-  if (_isIOS) {
-    for (var i = 0; i < 5; i++) {
-      history.pushState({ page: 'game', depth: i }, '', '#game');
-    }
-  } else {
-    for (var i = 0; i < 20; i++) {
-      history.pushState({ page: 'game', depth: i }, '');
-    }
-  }
-}
-
-window.addEventListener('pageshow', function(e) {
-  if (e.persisted && gameActive) {
-    document.getElementById('back-guard-overlay').style.display = 'flex';
-    _backGuardShowing = true;
-    _refillStack();
-  }
-});
-
-function backGuardCancel() {
-  _refillStack();
-  document.getElementById('back-guard-overlay').style.display = 'none';
-  _backGuardShowing = false;
-}
-
-function backGuardLeave() {
-  gameActive = false;
-  _backGuardShowing = false;
-  document.getElementById('back-guard-overlay').style.display = 'none';
-  showScreen('screen-intro');
-}
-
-window.addEventListener('popstate', function() {
-  if (!gameActive) return;
-  _refillStack();
-  if (_backGuardShowing) return;
-  _backGuardShowing = true;
-  document.getElementById('back-guard-overlay').style.display = 'flex';
-});
-
-window.addEventListener('beforeunload', function(e) {
-  if (gameActive) { e.preventDefault(); e.returnValue = ''; }
-});
-
-var activeTab = 'orders';
-function switchTab(tab) {
-  activeTab = tab;
-  ['orders','trucks','map'].forEach(function(t) {
-    var panel = document.getElementById('tab-' + t);
-    var btn   = document.getElementById('tabbtn-' + t);
-    if (!panel || !btn) return;
-    panel.classList.toggle('tab-active', t === tab);
-    btn.classList.toggle('active', t === tab);
+function switchTab(tab){
+  ['orders','trucks','map'].forEach(t=>{
+    const panel=document.getElementById('tab-'+t),btn=document.getElementById('tabbtn-'+t);
+    if(!panel||!btn)return;panel.classList.toggle('tab-active',t===tab);btn.classList.toggle('active',t===tab);
   });
-  if (tab === 'map' && map) setTimeout(function(){ map.invalidateSize(); }, 50);
+  if(tab==='map'&&map)setTimeout(()=>map.invalidateSize(),50);
 }
+function updateTabBadge(){const b=document.getElementById('tab-orders-badge');if(!b)return;if(poolOrders.length>0){b.textContent=poolOrders.length;b.style.display='flex';}else b.style.display='none';}
+function toggleRules(){const t=document.getElementById('rules-toggle'),c=document.getElementById('rules-collapse');if(!t||!c)return;const open=c.classList.contains('open');c.classList.toggle('open',!open);t.classList.toggle('open',!open);}
 
-function updateTabBadge() {
-  var badge = document.getElementById('tab-orders-badge');
-  if (!badge) return;
-  if (poolOrders.length > 0) {
-    badge.textContent = poolOrders.length;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
+// Ghost-click guard for backdrop
+var _sheetOpenTime=0;
+function backdropTap(){if(Date.now()-_sheetOpenTime<400)return;closeSheet();}
 
-(function() {
-  var orig = renderAll;
-  renderAll = function() { orig(); updateTabBadge(); };
-})();
+function openSheet(order,sourceTid){} // kept as no-op for compatibility
+function closeSheet(){document.getElementById('sheet-backdrop').classList.remove('open');document.getElementById('bottom-sheet').classList.remove('open');}
+function sheetAssign(tid){}
+function sheetReturn(){}
 
-function toggleRules() {
-  var toggle = document.getElementById('rules-toggle');
-  var collapse = document.getElementById('rules-collapse');
-  if (!toggle || !collapse) return;
-  var open = collapse.classList.contains('open');
-  collapse.classList.toggle('open', !open);
-  toggle.classList.toggle('open', !open);
-}
-
-document.getElementById('player-name-input').addEventListener('input', function() {
-  var m = document.getElementById('player-name-input-mobile');
-  if (m) m.value = this.value;
-});
-
-// ── Bottom sheet ──
-var sheetOrder = null, sheetSourceTid = null;
-
-function openSheet(order, sourceTid) {
-  sheetOrder = order; sheetSourceTid = sourceTid;
-  document.getElementById('sheet-title').textContent = order.storeName;
-  document.getElementById('sheet-sub').textContent =
-    order.id + ' · ' + order.cases.toLocaleString() + ' cs · ' + Math.round(order.weight).toLocaleString() + ' lbs';
-  var html = '';
-  if (!trucks.length) {
-    html = '<div style="font-size:15px;color:var(--text3);padding:12px 0;">No trucks yet — go to the Trucks tab and add one.</div>';
-  } else {
-    trucks.forEach(function(t, idx) {
-      if (sourceTid === t.id) return;
-      var col = TRUCK_COLORS[idx % TRUCK_COLORS.length];
-      var curW = t.orders.reduce(function(s,o){return s+o.weight;}, 0);
-      var over = curW + order.weight > CAP.weight;
-      var leftLbs = Math.round(CAP.weight - curW).toLocaleString();
-      html += '<button class="sheet-truck-btn' + (over?' over':'') + '" onclick="sheetAssign(' + t.id + ')">'
-        + '<span class="stb-dot" style="background:' + col + '"></span>'
-        + '<div class="stb-label">' + t.name + '<br>'
-        + '<span class="' + (over?'stb-warn':'stb-meta') + '">'
-        + (over ? '⚠ Over weight limit' : leftLbs + ' lbs remaining') + '</span></div>'
-        + '</button>';
-    });
-  }
-  if (sourceTid !== null) {
-    html += '<button class="sheet-return-btn" onclick="sheetReturn()">↩ Return to pool</button>';
-  }
-  document.getElementById('sheet-body').innerHTML = html;
-  document.getElementById('sheet-backdrop').classList.add('open');
-  document.getElementById('bottom-sheet').classList.add('open');
-  _sheetOpenTime = Date.now();
-  closeCtx();
-}
-
-// Ghost-click guard: Android fires a synthetic click ~300ms after touchend.
-// That click lands on the now-visible backdrop and instantly closes the sheet.
-// Ignore any backdrop close within 400ms of the sheet opening.
-var _sheetOpenTime = 0;
-function backdropTap() {
-  if (Date.now() - _sheetOpenTime < 400) return;
-  closeSheet();
-}
-
-function closeSheet() {
-  document.getElementById('sheet-backdrop').classList.remove('open');
-  document.getElementById('bottom-sheet').classList.remove('open');
-  sheetOrder = null; sheetSourceTid = null;
-}
-
-function sheetAssign(tid) {
-  if (!sheetOrder) return;
-  var src = sheetSourceTid;
-  if (src === null) {
-    poolOrders = poolOrders.filter(function(o){return o.id !== sheetOrder.id;});
-  } else {
-    var st = trucks.find(function(t){return t.id===src;});
-    if (st) st.orders = st.orders.filter(function(o){return o.id !== sheetOrder.id;});
-  }
-  var dest = trucks.find(function(t){return t.id===tid;});
-  if (dest) dest.orders.push(sheetOrder);
-  closeSheet();
-  if (window.innerWidth <= 600) switchTab('trucks');
-  renderAll(); updateMarkerColors(); scheduleRouteUpdate(tid);
-  if (src && src !== tid) scheduleRouteUpdate(src);
-  updateMilesOverlay();
-}
-
-function sheetReturn() {
-  if (!sheetOrder || sheetSourceTid === null) return;
-  var src = sheetSourceTid;
-  var st = trucks.find(function(t){return t.id===src;});
-  if (st) st.orders = st.orders.filter(function(o){return o.id !== sheetOrder.id;});
-  poolOrders.push(sheetOrder);
-  closeSheet();
-  if (window.innerWidth <= 600) switchTab('orders');
-  renderAll(); updateMarkerColors(); scheduleRouteUpdate(src); updateMilesOverlay();
-}
-
-// ctx-menu used on all platforms — no bottom-sheet redirect needed
-
-function updateGameBodyHeight() {}
+function updateGameBodyHeight(){}
 </script>
 
-<!-- MOBILE BOTTOM SHEET -->
+<!-- MOBILE BOTTOM SHEET (kept for structure) -->
 <div class="sheet-backdrop" id="sheet-backdrop" onclick="backdropTap()" ontouchend="backdropTap()"></div>
 <div class="bottom-sheet" id="bottom-sheet">
   <div class="sheet-handle"></div>
@@ -3403,31 +1958,14 @@ function updateGameBodyHeight() {}
 </div>
 
 <!-- BACK BUTTON GUARD -->
-<div id="back-guard-overlay" style="
-  display:none; position:fixed; inset:0; z-index:99999;
-  background:rgba(0,0,0,0.7); align-items:center; justify-content:center;
-">
-  <div style="
-    background:var(--bg2); border:1px solid var(--border2);
-    border-radius:16px; padding:28px 28px 24px; max-width:360px; width:90%;
-    text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5);
-  ">
-    <div style="font-size:36px; margin-bottom:12px;">⚠️</div>
-    <div style="font-size:20px; font-weight:700; color:var(--text); margin-bottom:8px;">Leave game?</div>
-    <div style="font-size:15px; color:var(--text2); margin-bottom:24px; line-height:1.5;">
-      Your progress will be lost.<br>This cannot be undone.
-    </div>
-    <div style="display:flex; gap:12px;">
-      <button onclick="backGuardCancel()" style="
-        flex:1; padding:13px; background:var(--bg3); border:1px solid var(--border2);
-        border-radius:10px; font-family:var(--font); font-size:16px;
-        font-weight:700; color:var(--text); cursor:pointer;
-      ">Stay</button>
-      <button onclick="backGuardLeave()" style="
-        flex:1; padding:13px; background:var(--red); border:none;
-        border-radius:10px; font-family:var(--font); font-size:16px;
-        font-weight:700; color:#fff; cursor:pointer;
-      ">Leave</button>
+<div id="back-guard-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px 28px 24px;max-width:360px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px;">Leave game?</div>
+    <div style="font-size:15px;color:var(--text2);margin-bottom:24px;line-height:1.5;">Your progress will be lost.</div>
+    <div style="display:flex;gap:12px;">
+      <button onclick="backGuardCancel()" style="flex:1;padding:13px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;font-family:var(--font);font-size:16px;font-weight:700;color:var(--text);cursor:pointer;">Stay</button>
+      <button onclick="backGuardLeave()" style="flex:1;padding:13px;background:var(--red);border:none;border-radius:10px;font-family:var(--font);font-size:16px;font-weight:700;color:#fff;cursor:pointer;">Leave</button>
     </div>
   </div>
 </div>
