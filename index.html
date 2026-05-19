@@ -1199,7 +1199,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 </div>
 
 <div class="toast" id="toast"></div>
-<div class="ctx-menu" id="ctx-menu" onmouseleave="closeCtx()"></div>
+<div class="ctx-menu" id="ctx-menu"></div>
 <div id="touch-drag-ghost"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1818,7 +1818,7 @@ function makePoolChip(o) {
   d.innerHTML = `<div class="chip-id">${o.id}</div><div class="chip-store">${o.storeName}</div><div class="chip-sub">${o.cases.toLocaleString()} cs · ${Math.round(o.weight).toLocaleString()} lbs</div><div class="chip-flags">${flags}</div>`;
   d.addEventListener('dragstart', e => { draggedOrder=o; dragSource='pool'; setTimeout(()=>d.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
   d.addEventListener('dragend', () => d.classList.remove('dragging'));
-  d.addEventListener('contextmenu', e => { e.preventDefault(); openCtx(e, o, null); });
+  d.addEventListener('contextmenu', e => { e.preventDefault(); if (!window._touchLongPressActive) openCtx(e, o, null); });
   return d;
 }
 
@@ -1901,7 +1901,7 @@ function makeTruckRow(o, tid) {
   d.innerHTML = `<span class="or-store">${o.storeName}</span><span class="or-cases">${o.cases.toLocaleString()} cs</span><span class="or-weight">${Math.round(o.weight).toLocaleString()} lbs</span><span class="chip-flags">${flags}</span>`;
   d.addEventListener('dragstart', e => { draggedOrder=o; dragSource='truck_'+tid; setTimeout(()=>d.classList.add('dragging'),0); e.dataTransfer.effectAllowed='move'; });
   d.addEventListener('dragend', () => d.classList.remove('dragging'));
-  d.addEventListener('contextmenu', e => { e.preventDefault(); openCtx(e, o, tid); });
+  d.addEventListener('contextmenu', e => { e.preventDefault(); if (!window._touchLongPressActive) openCtx(e, o, tid); });
   return d;
 }
 
@@ -2780,6 +2780,7 @@ function openCtx(e, order, sourceTid) {
   }
 
   menu.classList.add('open');
+  window._ctxOpenTime = Date.now(); // ghost-click guard
   const vw = window.innerWidth, vh = window.innerHeight;
   const mw = menu.offsetWidth, mh = menu.offsetHeight;
   let x = e.clientX + 4, y = e.clientY + 4;
@@ -2822,6 +2823,7 @@ function ctxReturnToPool() {
 }
 
 document.addEventListener('click', e => {
+  if (Date.now() - (window._ctxOpenTime || 0) < 400) return; // ghost-click guard
   const menu = document.getElementById('ctx-menu');
   if (menu && !menu.contains(e.target)) closeCtx();
 });
@@ -2834,32 +2836,28 @@ function showToast(msg) {
 document.getElementById('player-name-input').addEventListener('keydown', e => { if(e.key==='Enter') startGame(); });
 
 // ═══════════════════════════════════════════════════════════════
-// TOUCH DRAG AND DROP — ANDROID FIX
+// TOUCH DRAG AND DROP — ANDROID FIX v2
 //
-// Two bugs fixed vs original:
-//
-// Bug 1 (main Android issue): the old code set isDraggingTouch=true inside
-// the 400ms timer, even with zero finger movement. Android users hold slightly
-// longer than iOS, so slow taps were silently treated as drags and the sheet
-// never opened. Fix: split into longPressTriggered (timer fired) and
-// isDraggingTouch (finger actually moved). Slow taps always reach the tap path.
-//
-// Bug 2: Android touch jitter (10-14px natural drift) exceeded the old 8px tap
-// threshold and the 10px long-press cancel threshold. Bumped to 15px and 12px.
+// Three bugs fixed:
+// 1. Slow tap (>400ms hold, no movement): longPressTriggered path used to just
+//    reset state and show nothing. Now falls through to open the sheet.
+// 2. Sheet condition was innerWidth<=600 only, missing landscape phones (>600px).
+//    Now opens on any touch device regardless of width.
+// 3. Cross-panel drag blocked by `touch-action:pan-y` on scrollable panels.
+//    On long-press fire we set touch-action:none so the finger can drag anywhere.
 // ═══════════════════════════════════════════════════════════════
 (function() {
   'use strict';
   var ghost = document.getElementById('touch-drag-ghost');
-  var touchDragOrder = null;
+  var touchDragOrder  = null;
   var touchDragSource = null;
-  var longPressTimer = null;
-  var longPressTriggered = false; // timer fired; ghost shown
-  var isDraggingTouch = false;    // finger moved after long-press; drag committed
-  var lastDropTarget = null;
+  var longPressTimer  = null;
+  var longPressTriggered = false; // 400ms timer fired, ghost visible
+  var isDraggingTouch    = false; // finger moved after long-press, drag committed
+  var lastDropTarget  = null;
   var touchStartX = 0, touchStartY = 0;
-  var tapStartX = 0, tapStartY = 0;
-  var tapTarget = null;
-  var tapStartTime = 0;
+  var lastTouchX  = 0, lastTouchY  = 0;
+  var activeTapChip = null; // chip element that was tapped
 
   function getOrderFromEl(el) {
     var chip = el.closest('.order-chip, .order-row');
@@ -2921,97 +2919,103 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
 
   function resetTouchState() {
     clearTimeout(longPressTimer);
-    longPressTimer = null;
+    longPressTimer     = null;
     longPressTriggered = false;
-    isDraggingTouch = false;
-    touchDragOrder = null;
-    touchDragSource = null;
-    draggedOrder = null;
-    dragSource = null;
+    isDraggingTouch    = false;
+    touchDragOrder     = null;
+    touchDragSource    = null;
+    draggedOrder       = null;
+    dragSource         = null;
+    window._touchLongPressActive = false;
     clearHighlight();
     hideGhost();
+    // Restore panel scrolling that was locked for drag
+    document.querySelectorAll('.orders-panel, .trucks-panel').forEach(function(p) {
+      p.style.touchAction = '';
+    });
     document.querySelectorAll('.order-chip.dragging, .order-row.dragging')
       .forEach(function(el){ el.classList.remove('dragging'); });
   }
 
-  // ── touchstart: prime long-press AND record tap start ──
+  // ── touchstart ──
   document.addEventListener('touchstart', function(e) {
     var chip = e.target.closest('.order-chip, .order-row');
     if (!chip) return;
 
     var touch = e.touches[0];
-    touchStartX = tapStartX = touch.clientX;
-    touchStartY = tapStartY = touch.clientY;
-    tapTarget   = chip;
-    tapStartTime = Date.now();
+    touchStartX = lastTouchX = touch.clientX;
+    touchStartY = lastTouchY = touch.clientY;
+    activeTapChip = chip;
 
-    // After 400ms, prime for drag — but do NOT commit (isDraggingTouch stays false).
-    // Drag commits only when the finger actually moves in touchmove.
-    // This is the core Android fix: a 400ms+ tap with no movement stays a tap.
     longPressTimer = setTimeout(function() {
       var o   = getOrderFromEl(chip);
       var src = getSourceFromEl(chip);
       if (!o || !src) return;
       longPressTriggered = true;
+      window._touchLongPressActive = true;
       touchDragOrder  = o;
       touchDragSource = src;
       draggedOrder    = o;
       dragSource      = src;
+      // FIX 3: lock touch-action so finger can drag across panels in any direction
+      document.querySelectorAll('.orders-panel, .trucks-panel').forEach(function(p) {
+        p.style.touchAction = 'none';
+      });
       showGhost(
         o.storeName + ' · ' + Math.round(o.weight).toLocaleString() + ' lbs',
-        touchStartX, touchStartY
+        lastTouchX, lastTouchY
       );
       if (navigator.vibrate) navigator.vibrate(40);
     }, 400);
   }, { passive: true });
 
-  // ── touchmove: cancel timer on scroll; commit drag on movement ──
+  // ── touchmove ──
   document.addEventListener('touchmove', function(e) {
     var t  = e.touches[0];
+    lastTouchX = t.clientX;
+    lastTouchY = t.clientY;
     var dx = Math.abs(t.clientX - touchStartX);
     var dy = Math.abs(t.clientY - touchStartY);
 
     if (!longPressTriggered) {
-      // Long-press not yet fired. Cancel timer if finger moved > 12px.
-      // 12px (was 10px) gives Android's natural jitter more slack.
+      // Cancel long-press if user scrolls (>12px movement)
       if (dx > 12 || dy > 12) {
         clearTimeout(longPressTimer);
         longPressTimer = null;
-        tapTarget = null; // too much movement — not a tap either
+        activeTapChip  = null; // moved too much — not a tap
       }
-      return; // let scroll proceed normally
+      return; // let browser scroll
     }
 
-    // Long-press fired. Commit to drag on first movement > 8px.
-    if (!isDraggingTouch) {
-      if (dx > 8 || dy > 8) {
-        isDraggingTouch = true;
-        var chipEl = document.querySelector(
-          '.order-chip[data-id="' + (touchDragOrder && touchDragOrder.id) + '"],' +
-          '.order-row[data-id="' + (touchDragOrder && touchDragOrder.id) + '"]'
-        );
-        if (chipEl) chipEl.classList.add('dragging');
-      } else {
-        return; // ghost visible but drag not committed yet — don't block scroll
-      }
+    // Long-press fired. Commit drag when finger moves >8px.
+    if (!isDraggingTouch && (dx > 8 || dy > 8)) {
+      isDraggingTouch = true;
+      var chipEl = document.querySelector(
+        '.order-chip[data-id="' + touchDragOrder.id + '"],' +
+        '.order-row[data-id="' + touchDragOrder.id + '"]'
+      );
+      if (chipEl) chipEl.classList.add('dragging');
     }
 
-    e.preventDefault(); // block scroll only once drag is committed
-    moveGhost(t.clientX, t.clientY);
-    var target = getDropTarget(t.clientX, t.clientY);
-    highlightTarget(target ? target.el : null);
+    if (isDraggingTouch) {
+      e.preventDefault(); // block scroll during committed drag
+      moveGhost(t.clientX, t.clientY);
+      var target = getDropTarget(t.clientX, t.clientY);
+      highlightTarget(target ? target.el : null);
+    }
+    // Ghost visible but drag not yet committed — don't block scroll
   }, { passive: false });
 
-  // ── touchend: execute drop OR open sheet on tap ──
+  // ── touchend ──
   document.addEventListener('touchend', function(e) {
     clearTimeout(longPressTimer);
     longPressTimer = null;
 
     var touch = e.changedTouches[0];
-    var dx    = Math.abs(touch.clientX - tapStartX);
-    var dy    = Math.abs(touch.clientY - tapStartY);
+    var dx = Math.abs(touch.clientX - touchStartX);
+    var dy = Math.abs(touch.clientY - touchStartY);
 
-    // ── Drop path ──
+    // ── Drop path: drag was committed ──
     if (isDraggingTouch) {
       var target = getDropTarget(touch.clientX, touch.clientY);
       clearHighlight();
@@ -3020,12 +3024,10 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
         .forEach(function(el){ el.classList.remove('dragging'); });
 
       if (target && touchDragOrder) {
-        if (target.type === 'truck') {
-          if ('truck_' + target.tid !== touchDragSource) {
-            draggedOrder = touchDragOrder;
-            dragSource   = touchDragSource;
-            dropToTruck({ preventDefault: function(){}, currentTarget: target.el }, target.tid);
-          }
+        if (target.type === 'truck' && 'truck_' + target.tid !== touchDragSource) {
+          draggedOrder = touchDragOrder;
+          dragSource   = touchDragSource;
+          dropToTruck({ preventDefault: function(){}, currentTarget: target.el }, target.tid);
         } else if (target.type === 'pool' && touchDragSource !== 'pool') {
           draggedOrder = touchDragOrder;
           dragSource   = touchDragSource;
@@ -3034,42 +3036,35 @@ document.getElementById('player-name-input').addEventListener('keydown', e => { 
       }
 
       resetTouchState();
-      tapTarget = null;
+      activeTapChip = null;
       return;
     }
 
-    // ── Long-press fired but finger didn't move enough → aborted drag ──
-    if (longPressTriggered) {
-      hideGhost();
-      resetTouchState();
-      tapTarget = null;
-      return;
-    }
+    // ── Tap path (fast tap OR slow tap / long-press with no drag) ──
+    // FIX 1: longPressTriggered path used to just resetTouchState() and return,
+    // silently discarding the tap. Now we fall through and open the sheet.
+    var chipForTap = activeTapChip;
+    var orderForTap  = longPressTriggered ? touchDragOrder  : (chipForTap ? getOrderFromEl(chipForTap)  : null);
+    var sourceForTap = longPressTriggered ? touchDragSource : (chipForTap ? getSourceFromEl(chipForTap) : null);
 
-    // ── Tap path ──
-    // Accept as tap if movement < 15px (was 8px — Android jitter tolerance).
-    if (tapTarget && dx < 15 && dy < 15) {
-      var o   = getOrderFromEl(tapTarget);
-      var src = getSourceFromEl(tapTarget);
-      if (o) {
-        var tid = (src && src.startsWith('truck_'))
-          ? parseInt(src.replace('truck_', ''))
-          : null;
-        openCtx(
-          { clientX: touch.clientX, clientY: touch.clientY, preventDefault: function(){} },
-          o, tid
-        );
-      }
-    }
+    resetTouchState(); // clean up before opening sheet (avoids state bleed)
+    activeTapChip = null;
 
-    resetTouchState();
-    tapTarget = null;
+    if (orderForTap && dx < 15 && dy < 15) {
+      var tid = (sourceForTap && sourceForTap.startsWith('truck_'))
+        ? parseInt(sourceForTap.replace('truck_', ''))
+        : null;
+      openCtx(
+        { clientX: touch.clientX, clientY: touch.clientY, preventDefault: function(){} },
+        orderForTap, tid
+      );
+    }
   }, { passive: true });
 
-  // ── touchcancel: clean up ──
+  // ── touchcancel ──
   document.addEventListener('touchcancel', function() {
     resetTouchState();
-    tapTarget = null;
+    activeTapChip = null;
   }, { passive: true });
 
 })();
@@ -3223,7 +3218,17 @@ function openSheet(order, sourceTid) {
   document.getElementById('sheet-body').innerHTML = html;
   document.getElementById('sheet-backdrop').classList.add('open');
   document.getElementById('bottom-sheet').classList.add('open');
+  _sheetOpenTime = Date.now();
   closeCtx();
+}
+
+// Ghost-click guard: Android fires a synthetic click ~300ms after touchend.
+// That click lands on the now-visible backdrop and instantly closes the sheet.
+// Ignore any backdrop close within 400ms of the sheet opening.
+var _sheetOpenTime = 0;
+function backdropTap() {
+  if (Date.now() - _sheetOpenTime < 400) return;
+  closeSheet();
 }
 
 function closeSheet() {
@@ -3261,23 +3266,13 @@ function sheetReturn() {
   renderAll(); updateMarkerColors(); scheduleRouteUpdate(src); updateMilesOverlay();
 }
 
-// Override openCtx: use bottom sheet on touch mobile
-(function() {
-  var orig = openCtx;
-  openCtx = function(e, order, sourceTid) {
-    if (window.innerWidth <= 600 && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
-      openSheet(order, sourceTid);
-    } else {
-      orig(e, order, sourceTid);
-    }
-  };
-})();
+// ctx-menu used on all platforms — no bottom-sheet redirect needed
 
 function updateGameBodyHeight() {}
 </script>
 
 <!-- MOBILE BOTTOM SHEET -->
-<div class="sheet-backdrop" id="sheet-backdrop" onclick="closeSheet()"></div>
+<div class="sheet-backdrop" id="sheet-backdrop" onclick="backdropTap()" ontouchend="backdropTap()"></div>
 <div class="bottom-sheet" id="bottom-sheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
